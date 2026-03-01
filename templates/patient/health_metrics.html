@@ -1,7 +1,7 @@
 {% extends "layout.html" %}
 {% block title %}Health Metrics{% endblock %}
-{% block page_title %}Health Metrics{% endblock %}
-{% block page_subtitle %}Auto-extracted from your medical reports{% endblock %}
+{% block page_title %}Health Metrics & Wellbeing{% endblock %}
+{% block page_subtitle %}Auto-extracted from your uploaded medical reports{% endblock %}
 {% block page_actions %}
 <a href="{{ url_for('upload_report') }}" class="btn btn-primary">📤 Upload Report</a>
 {% endblock %}
@@ -9,52 +9,54 @@
 {% block content %}
 {% if metrics_list %}
 {% set latest = metrics_list[0] %}
-<!-- Latest Metrics -->
+
+<!-- ── Latest Snapshot ── -->
 <div class="card mb-5">
     <div class="card-header">
         <span class="card-title">✨ Latest Health Snapshot</span>
-        <span class="text-sm text-muted">From: {{ latest.file_name or 'Manual' }}</span>
+        <span class="text-sm text-muted">Source: {{ latest.file_name or 'Report' }}
+            · {{ latest.recorded_at.strftime('%d %b %Y') }}</span>
     </div>
     <div class="card-body">
         <div class="metric-cards-grid">
             {% if latest.blood_pressure %}
-            <div class="metric-card">
+            <div class="metric-card" data-metric="bp" data-value="{{ latest.blood_pressure }}">
                 <div class="metric-icon">🩺</div>
                 <div class="metric-value">{{ latest.blood_pressure }}</div>
                 <div class="metric-label">Blood Pressure</div>
-                <span class="metric-status normal">Normal</span>
+                <span class="metric-status" id="bp-status">—</span>
             </div>
             {% endif %}
             {% if latest.sugar %}
-            <div class="metric-card">
+            <div class="metric-card" data-metric="sugar" data-value="{{ latest.sugar }}">
                 <div class="metric-icon">🍬</div>
                 <div class="metric-value">{{ latest.sugar }}</div>
                 <div class="metric-label">Blood Sugar</div>
-                <span class="metric-status normal">Normal</span>
+                <span class="metric-status" id="sugar-status">—</span>
             </div>
             {% endif %}
             {% if latest.hemoglobin %}
-            <div class="metric-card">
+            <div class="metric-card" data-metric="hb" data-value="{{ latest.hemoglobin }}">
                 <div class="metric-icon">🔴</div>
                 <div class="metric-value">{{ latest.hemoglobin }}</div>
                 <div class="metric-label">Hemoglobin</div>
-                <span class="metric-status normal">Normal</span>
+                <span class="metric-status" id="hb-status">—</span>
             </div>
             {% endif %}
             {% if latest.cholesterol %}
-            <div class="metric-card">
+            <div class="metric-card" data-metric="cholesterol" data-value="{{ latest.cholesterol }}">
                 <div class="metric-icon">🫀</div>
                 <div class="metric-value">{{ latest.cholesterol }}</div>
                 <div class="metric-label">Cholesterol</div>
-                <span class="metric-status normal">Normal</span>
+                <span class="metric-status" id="chol-status">—</span>
             </div>
             {% endif %}
             {% if latest.heart_rate %}
-            <div class="metric-card">
+            <div class="metric-card" data-metric="hr" data-value="{{ latest.heart_rate }}">
                 <div class="metric-icon">💓</div>
                 <div class="metric-value">{{ latest.heart_rate }}</div>
                 <div class="metric-label">Heart Rate</div>
-                <span class="metric-status normal">Normal</span>
+                <span class="metric-status" id="hr-status">—</span>
             </div>
             {% endif %}
             {% if latest.weight %}
@@ -62,7 +64,7 @@
                 <div class="metric-icon">⚖️</div>
                 <div class="metric-value">{{ latest.weight }}</div>
                 <div class="metric-label">Weight</div>
-                <span class="metric-status normal">Normal</span>
+                <span class="metric-status normal">Recorded</span>
             </div>
             {% endif %}
             {% if latest.height %}
@@ -70,17 +72,28 @@
                 <div class="metric-icon">📏</div>
                 <div class="metric-value">{{ latest.height }}</div>
                 <div class="metric-label">Height</div>
-                <span class="metric-status normal">—</span>
+                <span class="metric-status normal">Recorded</span>
             </div>
             {% endif %}
         </div>
     </div>
 </div>
 
-<!-- History Table -->
+<!-- ── Health Insights ── -->
+<div class="card mb-5" id="insightsCard" style="display:none">
+    <div class="card-header">
+        <span class="card-title">💡 Health Insights & Suggestions</span>
+        <span class="badge badge-info">AI Powered</span>
+    </div>
+    <div class="card-body">
+        <div id="insightsList" style="display:flex;flex-direction:column;gap:12px"></div>
+    </div>
+</div>
+
+<!-- ── History Table ── -->
 <div class="card">
     <div class="card-header">
-        <span class="card-title">📅 History</span>
+        <span class="card-title">📅 Full History</span>
         <input type="text" id="metricsSearch" class="form-control" style="width:220px" placeholder="🔍 Search records…">
     </div>
     <div class="card-body" style="padding:0">
@@ -95,7 +108,7 @@
                         <th data-col="4">Cholesterol</th>
                         <th data-col="5">Heart Rate</th>
                         <th data-col="6">Weight</th>
-                        <th>Source</th>
+                        <th>Source Report</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -108,7 +121,7 @@
                         <td>{{ m.cholesterol or '–' }}</td>
                         <td>{{ m.heart_rate or '–' }}</td>
                         <td>{{ m.weight or '–' }}</td>
-                        <td class="text-xs text-muted">{{ m.file_name or 'Manual' }}</td>
+                        <td class="text-xs text-muted">{{ m.file_name or '—' }}</td>
                     </tr>
                     {% endfor %}
                 </tbody>
@@ -116,15 +129,17 @@
         </div>
     </div>
 </div>
+
 {% else %}
 <div class="card">
     <div class="card-body">
         <div class="empty-state">
             <div class="empty-icon">🧬</div>
             <h3>No Health Metrics Yet</h3>
-            <p>Upload a medical report to automatically extract your health data.</p>
-            <a href="{{ url_for('upload_report') }}" class="btn btn-primary" style="margin-top:16px">📤 Upload
-                Report</a>
+            <p>Upload a medical report (PDF or image) to automatically extract your health data using OCR.</p>
+            <a href="{{ url_for('upload_report') }}" class="btn btn-primary" style="margin-top:16px">
+                📤 Upload Report
+            </a>
         </div>
     </div>
 </div>
@@ -133,6 +148,168 @@
 
 {% block extra_js %}
 <script>
-    document.addEventListener('DOMContentLoaded', () => initTableSearch('metricsSearch', 'metricsTable'));
+    document.addEventListener('DOMContentLoaded', () => {
+        initTableSearch('metricsSearch', 'metricsTable');
+
+        // ── Health Insights Engine ──────────────────────────────────────
+        const insights = [];
+
+        function addInsight(icon, title, message, type) {
+            // type: 'normal' | 'warning' | 'danger' | 'info'
+            insights.push({ icon, title, message, type });
+        }
+
+        // Blood Pressure (systolic/diastolic)
+        const bpEl = document.querySelector('[data-metric="bp"]');
+        if (bpEl) {
+            const raw = bpEl.dataset.value;
+            const match = raw.match(/(\d+)\s*\/\s*(\d+)/);
+            if (match) {
+                const sys = parseInt(match[1]), dia = parseInt(match[2]);
+                const statusEl = document.getElementById('bp-status');
+                if (sys < 90 || dia < 60) {
+                    statusEl.textContent = 'Low'; statusEl.className = 'metric-status warning';
+                    addInsight('⚠️', 'Low Blood Pressure',
+                        'Your BP is below normal. Increase fluid & salt intake, rise slowly from sitting. Consult a doctor if dizzy.', 'warning');
+                } else if (sys <= 120 && dia <= 80) {
+                    statusEl.textContent = 'Normal'; statusEl.className = 'metric-status normal';
+                    addInsight('✅', 'Blood Pressure Normal',
+                        'Your blood pressure is in the healthy range. Maintain a balanced diet and regular exercise.', 'normal');
+                } else if (sys <= 139 || dia <= 89) {
+                    statusEl.textContent = 'Elevated'; statusEl.className = 'metric-status warning';
+                    addInsight('⚠️', 'Elevated Blood Pressure',
+                        'Your BP is slightly elevated. Reduce sodium, manage stress, and monitor regularly.', 'warning');
+                } else {
+                    statusEl.textContent = 'High'; statusEl.className = 'metric-status danger';
+                    addInsight('🚨', 'High Blood Pressure (Hypertension)',
+                        'Your BP is high. Avoid salty/processed foods, exercise regularly, and consult your doctor soon.', 'danger');
+                }
+            }
+        }
+
+        // Blood Sugar (mg/dL)
+        const sugarEl = document.querySelector('[data-metric="sugar"]');
+        if (sugarEl) {
+            const num = parseFloat(sugarEl.dataset.value);
+            const statusEl = document.getElementById('sugar-status');
+            if (!isNaN(num)) {
+                if (num < 70) {
+                    statusEl.textContent = 'Low'; statusEl.className = 'metric-status warning';
+                    addInsight('⚠️', 'Low Blood Sugar (Hypoglycemia)',
+                        'Your sugar is below 70 mg/dL. Eat a quick source of glucose (juice, candy). Monitor closely.', 'warning');
+                } else if (num <= 99) {
+                    statusEl.textContent = 'Normal'; statusEl.className = 'metric-status normal';
+                    addInsight('✅', 'Blood Sugar Normal',
+                        'Your fasting blood sugar is in the healthy range. Keep up a low-sugar, high-fibre diet.', 'normal');
+                } else if (num <= 125) {
+                    statusEl.textContent = 'Pre-diabetic'; statusEl.className = 'metric-status warning';
+                    addInsight('⚠️', 'Pre-diabetic Range',
+                        'Your sugar level is in the pre-diabetic zone. Reduce sugary foods, increase physical activity, and consult a doctor.', 'warning');
+                } else {
+                    statusEl.textContent = 'High'; statusEl.className = 'metric-status danger';
+                    addInsight('🚨', 'High Blood Sugar (Hyperglycemia)',
+                        'Your sugar is in the diabetic range. Avoid refined carbs & sugar. Medical consultation recommended immediately.', 'danger');
+                }
+            }
+        }
+
+        // Hemoglobin (g/dL)
+        const hbEl = document.querySelector('[data-metric="hb"]');
+        if (hbEl) {
+            const num = parseFloat(hbEl.dataset.value);
+            const statusEl = document.getElementById('hb-status');
+            if (!isNaN(num)) {
+                if (num < 11) {
+                    statusEl.textContent = 'Low (Anemia)'; statusEl.className = 'metric-status danger';
+                    addInsight('🚨', 'Low Hemoglobin (Anemia)',
+                        'You may be anemic. Eat iron-rich foods (spinach, lentils, meat) and consult a doctor for iron supplements.', 'danger');
+                } else if (num < 13.5) {
+                    statusEl.textContent = 'Slightly Low'; statusEl.className = 'metric-status warning';
+                    addInsight('⚠️', 'Slightly Low Hemoglobin',
+                        'Hemoglobin is slightly below ideal. Include more iron-rich and Vitamin C foods in your diet.', 'warning');
+                } else if (num <= 17.5) {
+                    statusEl.textContent = 'Normal'; statusEl.className = 'metric-status normal';
+                    addInsight('✅', 'Hemoglobin Normal',
+                        'Your hemoglobin level is healthy. Continue a balanced diet rich in iron and vitamins.', 'normal');
+                } else {
+                    statusEl.textContent = 'High'; statusEl.className = 'metric-status warning';
+                    addInsight('⚠️', 'High Hemoglobin',
+                        'High hemoglobin can indicate dehydration or other conditions. Stay hydrated and consult a doctor.', 'warning');
+                }
+            }
+        }
+
+        // Cholesterol (mg/dL)
+        const cholEl = document.querySelector('[data-metric="cholesterol"]');
+        if (cholEl) {
+            const num = parseFloat(cholEl.dataset.value);
+            const statusEl = document.getElementById('chol-status');
+            if (!isNaN(num)) {
+                if (num < 200) {
+                    statusEl.textContent = 'Desirable'; statusEl.className = 'metric-status normal';
+                    addInsight('✅', 'Cholesterol in Healthy Range',
+                        'Your cholesterol is desirable. Maintain with a heart-healthy diet, low in saturated fats.', 'normal');
+                } else if (num < 240) {
+                    statusEl.textContent = 'Borderline High'; statusEl.className = 'metric-status warning';
+                    addInsight('⚠️', 'Borderline High Cholesterol',
+                        'Reduce fried foods, red meat, and dairy fats. Add oats, nuts, and olive oil to your diet.', 'warning');
+                } else {
+                    statusEl.textContent = 'High'; statusEl.className = 'metric-status danger';
+                    addInsight('🚨', 'High Cholesterol',
+                        'High cholesterol increases heart disease risk. Consult a doctor for possible medication and strict dietary changes.', 'danger');
+                }
+            }
+        }
+
+        // Heart Rate (bpm)
+        const hrEl = document.querySelector('[data-metric="hr"]');
+        if (hrEl) {
+            const num = parseFloat(hrEl.dataset.value);
+            const statusEl = document.getElementById('hr-status');
+            if (!isNaN(num)) {
+                if (num < 60) {
+                    statusEl.textContent = 'Low'; statusEl.className = 'metric-status warning';
+                    addInsight('⚠️', 'Low Heart Rate (Bradycardia)',
+                        'Below 60 bpm. Can be normal for athletes but see a doctor if you feel faint or short of breath.', 'warning');
+                } else if (num <= 100) {
+                    statusEl.textContent = 'Normal'; statusEl.className = 'metric-status normal';
+                    addInsight('✅', 'Heart Rate Normal',
+                        'Your resting heart rate is within the healthy range (60–100 bpm). Keep up regular cardio exercise.', 'normal');
+                } else {
+                    statusEl.textContent = 'High'; statusEl.className = 'metric-status danger';
+                    addInsight('🚨', 'High Heart Rate (Tachycardia)',
+                        'Above 100 bpm at rest is high. Reduce caffeine, stress, and consult a doctor if persistent.', 'danger');
+                }
+            }
+        }
+
+        // ── Render Insight Cards ─────────────────────────────────────
+        if (insights.length > 0) {
+            const card = document.getElementById('insightsCard');
+            const list = document.getElementById('insightsList');
+            const colors = {
+                normal: { bg: 'rgba(16,185,129,.08)', border: 'rgba(16,185,129,.3)', text: 'var(--accent-dark)' },
+                warning: { bg: 'rgba(245,158,11,.08)', border: 'rgba(245,158,11,.35)', text: '#b45309' },
+                danger: { bg: 'rgba(239,68,68,.08)', border: 'rgba(239,68,68,.3)', text: '#dc2626' },
+                info: { bg: 'rgba(37,99,235,.08)', border: 'rgba(37,99,235,.2)', text: 'var(--primary)' },
+            };
+            insights.forEach(item => {
+                const c = colors[item.type] || colors.info;
+                list.innerHTML += `
+              <div style="
+                background:${c.bg};border:1px solid ${c.border};
+                border-radius:var(--radius);padding:14px 18px;
+                display:flex;align-items:flex-start;gap:14px;
+              ">
+                <span style="font-size:22px;flex-shrink:0">${item.icon}</span>
+                <div>
+                  <div style="font-weight:700;color:${c.text};margin-bottom:4px">${item.title}</div>
+                  <div style="font-size:13.5px;color:var(--text-muted);line-height:1.55">${item.message}</div>
+                </div>
+              </div>`;
+            });
+            card.style.display = '';
+        }
+    });
 </script>
 {% endblock %}

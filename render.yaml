@@ -1,0 +1,19 @@
+services:
+  - type: web
+    name: medilink
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn app:app
+    envVars:
+      - key: SECRET_KEY
+        generateValue: true
+      - key: DB_HOST
+        value: YOUR_MYSQL_HOST
+      - key: DB_USER
+        value: YOUR_MYSQL_USER
+      - key: DB_PASSWORD
+        value: YOUR_MYSQL_PASSWORD
+      - key: DB_NAME
+        value: medilink
+      - key: FLASK_DEBUG
+        value: "false"

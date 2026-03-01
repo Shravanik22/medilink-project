@@ -9,7 +9,14 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
 import pymysql
 
-# ─── Try optional imports ────────────────────────────────────────────────────
+# ─── Load .env if present (local dev) ────────────────────────────────────────
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    pass  # python-dotenv not installed — use real environment variables
+
+# ─── Optional imports ────────────────────────────────────────────────────────
 try:
     import PyPDF2
     PDF_SUPPORT = True
@@ -19,26 +26,38 @@ except ImportError:
 try:
     from PIL import Image
     import pytesseract
+    # Auto-detect Tesseract binary: env var > Windows default > system PATH
+    _tess_env = os.environ.get('TESSERACT_CMD', '')
+    _tess_win = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
+    if _tess_env and os.path.exists(_tess_env):
+        pytesseract.pytesseract.tesseract_cmd = _tess_env
+    elif os.path.exists(_tess_win):
+        pytesseract.pytesseract.tesseract_cmd = _tess_win
+    # else — rely on system PATH (Linux/Render)
+    # Verify the binary is actually runnable (not just path-detectable)
+    pytesseract.get_tesseract_version()  # raises if binary missing or broken
     OCR_SUPPORT = True
-except ImportError:
+except Exception:
     OCR_SUPPORT = False
 
 # ─── App Config ──────────────────────────────────────────────────────────────
 app = Flask(__name__)
-app.secret_key = 'medilink_secret_2024_xK9mN2pQ'
-app.config['UPLOAD_FOLDER'] = os.path.join(os.path.dirname(__file__), 'uploads')
-app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB
+app.secret_key = os.environ.get('SECRET_KEY', 'medilink_secret_2024_xK9mN2pQ_changeme')
+app.config['UPLOAD_FOLDER'] = os.environ.get(
+    'UPLOAD_FOLDER', os.path.join(os.path.dirname(__file__), 'uploads'))
+app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16 MB
 
 ALLOWED_EXTENSIONS = {'pdf', 'png', 'jpg', 'jpeg', 'gif'}
 
-# ─── DB Config ───────────────────────────────────────────────────────────────
+# ─── DB Config (env vars with sensible local defaults) ───────────────────────
 DB_CONFIG = {
-    'host': 'localhost',
-    'user': 'root',
-    'password': '',          # ← change if you have a MySQL root password
-    'database': 'medilink',
-    'charset': 'utf8mb4',
-    'cursorclass': pymysql.cursors.DictCursor
+    'host':     os.environ.get('DB_HOST',     'localhost'),
+    'user':     os.environ.get('DB_USER',     'root'),
+    'password': os.environ.get('DB_PASSWORD', ''),
+    'database': os.environ.get('DB_NAME',     'medilink'),
+    'charset':  'utf8mb4',
+    'cursorclass': pymysql.cursors.DictCursor,
+    'connect_timeout': 10,
 }
 
 def get_db():
@@ -49,13 +68,16 @@ def allowed_file(filename):
 
 # ─── Init DB ─────────────────────────────────────────────────────────────────
 def init_db():
+    db_name = DB_CONFIG['database']
     try:
         base = pymysql.connect(host=DB_CONFIG['host'], user=DB_CONFIG['user'],
                                password=DB_CONFIG['password'],
                                charset='utf8mb4',
                                cursorclass=pymysql.cursors.DictCursor)
         with base.cursor() as c:
-            c.execute("CREATE DATABASE IF NOT EXISTS medilink CHARACTER SET utf8mb4")
+            c.execute(
+                f"CREATE DATABASE IF NOT EXISTS `{db_name}` CHARACTER SET utf8mb4"
+            )
         base.commit()
         base.close()
 
@@ -173,9 +195,9 @@ def init_db():
                      generate_password_hash('admin123')))
         conn.commit()
         conn.close()
-        print("✅ Database initialized successfully")
+        app.logger.info('Database initialized successfully')
     except Exception as e:
-        print(f"⚠️  DB init error: {e}")
+        app.logger.error('DB init error: %s', e)
 
 # ─── Decorators ──────────────────────────────────────────────────────────────
 def login_required(f):
@@ -202,24 +224,48 @@ def role_required(*roles):
 
 # ─── TEXT EXTRACTION ─────────────────────────────────────────────────────────
 def extract_text_from_file(filepath):
+    """
+    Extract text from an uploaded PDF or image file.
+    Returns extracted text, or a safe fallback string if extraction fails.
+    NEVER raises an exception — always returns a string.
+    """
     ext = filepath.rsplit('.', 1)[-1].lower()
     text = ''
-    if ext == 'pdf' and PDF_SUPPORT:
-        try:
-            with open(filepath, 'rb') as f:
-                reader = PyPDF2.PdfReader(f)
-                for page in reader.pages:
-                    text += page.extract_text() or ''
-        except Exception as e:
-            text = f'PDF extraction error: {e}'
-    elif ext in ('png', 'jpg', 'jpeg', 'gif') and OCR_SUPPORT:
-        try:
-            img = Image.open(filepath)
-            text = pytesseract.image_to_string(img)
-        except Exception as e:
-            text = f'OCR error: {e}'
+
+    # ─ PDF extraction via PyPDF2 (no external binary needed) ─
+    if ext == 'pdf':
+        if PDF_SUPPORT:
+            try:
+                with open(filepath, 'rb') as f:
+                    reader = PyPDF2.PdfReader(f)
+                    for page in reader.pages:
+                        text += page.extract_text() or ''
+                if not text.strip():
+                    text = '__ocr_unavailable__'   # scanned PDF with no text layer
+            except Exception as pdf_err:
+                app.logger.warning('PDF extraction failed: %s', pdf_err)
+                text = '__ocr_unavailable__'
+        else:
+            text = '__ocr_unavailable__'
+
+    # ─ Image OCR via pytesseract (requires Tesseract binary) ─
+    elif ext in ('png', 'jpg', 'jpeg', 'gif'):
+        if OCR_SUPPORT:
+            try:
+                img = Image.open(filepath)
+                text = pytesseract.image_to_string(img)
+                if not text.strip():
+                    text = '__ocr_unavailable__'
+            except Exception as ocr_err:
+                app.logger.warning('OCR extraction failed: %s', ocr_err)
+                text = '__ocr_unavailable__'
+        else:
+            text = '__ocr_unavailable__'
+
+    # ─ Unsupported type ─
     else:
-        text = 'Sample report: BP 120/80 mmHg, Sugar 95 mg/dL, Hemoglobin 13.5 g/dL, Cholesterol 180 mg/dL, Heart Rate 72 bpm, Weight 70 kg, Height 170 cm'
+        text = '__ocr_unavailable__'
+
     return text
 
 def parse_health_metrics(text):
@@ -430,8 +476,21 @@ def upload_report():
                          metrics.get('cholesterol'), metrics.get('heart_rate'),
                          metrics.get('weight'), metrics.get('height')))
             conn.commit()
-            return jsonify({'success': True, 'message': 'Report uploaded & health metrics extracted!',
-                            'metrics': metrics})
+            # Determine response message based on extraction result
+            if raw_text == '__ocr_unavailable__' or not any(metrics.values()):
+                msg = ('Report uploaded successfully! '
+                       'Automatic data extraction is currently unavailable — '
+                       'health metrics could not be read from this file.')
+                return jsonify({
+                    'success': True,
+                    'message': msg,
+                    'metrics': {}
+                })
+            return jsonify({
+                'success': True,
+                'message': 'Report uploaded & health metrics extracted!',
+                'metrics': metrics
+            })
         finally:
             conn.close()
     conn = get_db()
@@ -833,8 +892,13 @@ def api_medicines():
 def serve_upload(filename):
     return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
 
+# ─── Startup ─────────────────────────────────────────────────────────────────
+os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+init_db()
+app.logger.info('MediLink starting — OCR_SUPPORT=%s  PDF_SUPPORT=%s', OCR_SUPPORT, PDF_SUPPORT)
+
 # ─── Main ─────────────────────────────────────────────────────────────────────
 if __name__ == '__main__':
-    os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
-    init_db()
-    app.run(debug=True, port=5000)
+    port = int(os.environ.get('PORT', 5000))
+    debug = os.environ.get('FLASK_DEBUG', 'false').lower() == 'true'
+    app.run(host='0.0.0.0', port=port, debug=debug)

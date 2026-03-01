@@ -1,7 +1,20 @@
-flask>=2.3.0
-flask-session>=0.5.0
+# Core web framework
+flask>=2.3.0,<3.0
+Werkzeug>=2.3.0,<3.0
+
+# Database
 PyMySQL>=1.1.0
-PyPDF2>=3.0.0
+cryptography>=41.0.0  # required by PyMySQL on Python 3.12+
+
+# Environment / config
+python-dotenv>=1.0.0
+
+# Production WSGI server
+gunicorn>=21.2.0
+
+# OCR (optional — app works without Tesseract installed)
 Pillow>=10.0.0
 pytesseract>=0.3.10
-Werkzeug>=2.3.0
+
+# PDF text extraction (optional — app works without it)
+PyPDF2>=3.0.0

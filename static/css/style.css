@@ -1910,16 +1910,75 @@ tbody td {
     }
 }
 
-@media (max-width:600px) {
-    .stats-grid {
-        grid-template-columns: 1fr 1fr;
-    }
+.landing-nav {
+    padding: 12px 16px;
+}
 
-    .hero h1 {
-        font-size: 32px;
-    }
 
-    .landing-nav {
-        padding: 12px 16px;
+/* ============================================================
+   Metric Status Badges
+   ============================================================ */
+.metric-status {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 2px 10px;
+    border-radius: 20px;
+    margin-top: 6px;
+    text-transform: uppercase;
+    letter-spacing: .4px;
+}
+
+.metric-status.normal {
+    background: rgba(16, 185, 129, .12);
+    color: #059669;
+}
+
+.metric-status.warning {
+    background: rgba(245, 158, 11, .12);
+    color: #b45309;
+}
+
+.metric-status.danger {
+    background: rgba(239, 68, 68, .12);
+    color: #dc2626;
+}
+
+/* ============================================================
+   Chemist Portal – Distinct Teal Theme
+   ============================================================ */
+body.chemist-layout {
+    --primary: #0d9488;
+    --primary-dark: #0f766e;
+    --primary-light: #ccfbf1;
+    --accent: #6366f1;
+    --accent-dark: #4f46e5;
+    --accent-light: #e0e7ff;
+}
+
+body.chemist-layout .sidebar {
+    background: linear-gradient(180deg, #0d4a46 0%, #0a3d3a 60%, #082e2b 100%);
+}
+
+body.chemist-layout .sidebar-logo {
+    background: rgba(255, 255, 255, .08);
+}
+
+body.chemist-layout .nav-item.active,
+body.chemist-layout .nav-item:hover {
+    background: rgba(13, 148, 136, .25);
+    color: #5eead4;
+}
+
+body.chemist-layout .sidebar-footer .logout-btn {
+    background: rgba(239, 68, 68, .15);
+}
+
+/* ============================================================
+   Responsive metric grid
+   ============================================================ */
+@media (max-width: 600px) {
+    .metric-cards-grid {
+        grid-template-columns: repeat(2, 1fr);
     }
 }
