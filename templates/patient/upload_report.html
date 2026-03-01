@@ -1,0 +1,144 @@
+{% extends "layout.html" %}
+{% block title %}Upload Medical Report{% endblock %}
+{% block page_title %}Medical Report Upload{% endblock %}
+{% block page_subtitle %}Auto-extract health metrics from your medical reports{% endblock %}
+
+{% block content %}
+<div class="grid-2">
+    <!-- Upload -->
+    <div class="card">
+        <div class="card-header">
+            <span class="card-title">📄 Upload New Report</span>
+        </div>
+        <div class="card-body">
+            <div
+                style="background:var(--primary-light);border-radius:var(--radius);padding:14px;margin-bottom:20px;border:1px solid rgba(37,99,235,.2)">
+                <p style="font-size:13px;color:var(--primary);font-weight:500">🧬 <strong>Auto Extraction</strong> —
+                    Upload your report and we'll automatically extract BP, Sugar, Hemoglobin, Cholesterol, Heart Rate,
+                    Weight & Height.</p>
+            </div>
+
+            <form id="reportForm">
+                <div class="form-group">
+                    <label class="form-label">Report File <sup>*</sup></label>
+                    <div class="drop-zone">
+                        <input type="file" name="file" id="reportFile" accept=".pdf,.jpg,.jpeg,.png"
+                            style="display:none" required>
+                        <div class="dz-icon">🔬</div>
+                        <div class="dz-text">
+                            <strong>Click or drag</strong> to upload medical report<br>
+                            <small>PDF or image (JPG, PNG) up to 16MB</small>
+                        </div>
+                        <div class="dz-selected" style="margin-top:10px;font-weight:600;color:var(--accent)"></div>
+                    </div>
+                </div>
+                <button type="submit" id="repBtn" class="btn btn-accent w-100 btn-lg">
+                    🧬 Upload & Extract Metrics
+                </button>
+            </form>
+
+            <!-- Extracted Metrics Display -->
+            <div id="metricsResult" style="display:none;margin-top:20px">
+                <div
+                    style="background:var(--accent-light);border-radius:var(--radius);padding:16px;border:1px solid rgba(16,185,129,.3)">
+                    <h4 style="color:var(--accent-dark);margin-bottom:12px">✅ Extracted Health Metrics</h4>
+                    <div id="metricsGrid" class="metric-cards-grid" style="grid-template-columns:repeat(3,1fr)"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Reports List -->
+    <div class="card">
+        <div class="card-header">
+            <span class="card-title">📁 Past Reports</span>
+            <span class="badge badge-info">{{ reports|length }}</span>
+        </div>
+        <div class="card-body" style="padding:0">
+            {% if reports %}
+            <div class="table-wrapper" style="border:none;border-radius:0">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Report</th>
+                            <th>Date</th>
+                            <th>BP</th>
+                            <th>Sugar</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for r in reports %}
+                        <tr>
+                            <td>
+                                <div class="font-bold text-sm">{{ r.file_name }}</div>
+                            </td>
+                            <td class="text-sm">{{ r.uploaded_at.strftime('%d %b %Y') }}</td>
+                            <td class="text-sm">{{ r.blood_pressure or '–' }}</td>
+                            <td class="text-sm">{{ r.sugar or '–' }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="empty-state">
+                <div class="empty-icon">📄</div>
+                <h3>No Reports</h3>
+                <p>Upload your first medical report</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    const metricIcons = {
+        blood_pressure: '🩺', sugar: '🍬', hemoglobin: '🔴',
+        cholesterol: '🫀', heart_rate: '💓', weight: '⚖️', height: '📏'
+    };
+    const metricNames = {
+        blood_pressure: 'Blood Pressure', sugar: 'Sugar',
+        hemoglobin: 'Hemoglobin', cholesterol: 'Cholesterol',
+        heart_rate: 'Heart Rate', weight: 'Weight', height: 'Height'
+    };
+
+    document.getElementById('reportForm').addEventListener('submit', async e => {
+        e.preventDefault();
+        const btn = document.getElementById('repBtn');
+        Loader.show('Analyzing report & extracting health metrics…');
+        const fd = new FormData(e.target);
+        try {
+            const res = await fetch('{{ url_for("upload_report") }}', { method: 'POST', body: fd });
+            const data = await res.json();
+            Loader.hide();
+            if (data.success) {
+                Toast.success(data.message);
+                if (data.metrics) showMetrics(data.metrics);
+                setTimeout(() => location.reload(), 2500);
+            } else {
+                Toast.error(data.message);
+            }
+        } catch {
+            Loader.hide();
+            Toast.error('Upload failed.');
+        }
+    });
+
+    function showMetrics(m) {
+        const grid = document.getElementById('metricsGrid');
+        grid.innerHTML = '';
+        Object.entries(m).forEach(([key, val]) => {
+            if (!val) return;
+            grid.innerHTML += `
+      <div class="metric-card">
+        <div class="metric-icon">${metricIcons[key] || '📊'}</div>
+        <div class="metric-value" style="font-size:16px">${val}</div>
+        <div class="metric-label">${metricNames[key] || key}</div>
+      </div>`;
+        });
+        document.getElementById('metricsResult').style.display = 'block';
+    }
+</script>
+{% endblock %}

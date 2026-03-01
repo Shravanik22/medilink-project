@@ -1,0 +1,129 @@
+{% extends "base.html" %}
+{% block title %}Welcome{% endblock %}
+{% block body %}
+<div class="landing">
+    <!-- Nav -->
+    <nav class="landing-nav">
+        <a href="{{ url_for('index') }}" class="nav-brand">
+            <div class="brand-icon" style="width:36px;height:36px;font-size:18px">💊</div>
+            <span>MediLink</span>
+        </a>
+        <div class="nav-links">
+            <a href="{{ url_for('login') }}" class="btn btn-outline btn-sm">Login</a>
+            <a href="{{ url_for('register') }}" class="btn btn-primary btn-sm">Get Started</a>
+        </div>
+    </nav>
+
+    <!-- Hero -->
+    <section class="hero">
+        <div class="hero-content animate-slide-up">
+            <div class="hero-badge">
+                <span>🏥</span> Smart Telemedicine Platform
+            </div>
+            <h1>
+                Healthcare,<br>
+                <span class="gradient-text">Reimagined</span>
+            </h1>
+            <p>Connect with chemists, manage prescriptions digitally, and track your health metrics — all in one
+                powerful platform.</p>
+            <div class="hero-btns">
+                <a href="{{ url_for('register') }}" class="btn btn-accent btn-lg">
+                    🚀 Start Free
+                </a>
+                <a href="{{ url_for('login') }}" class="btn btn-lg"
+                    style="background:rgba(255,255,255,.12);color:#fff;border:1px solid rgba(255,255,255,.25)">
+                    🔑 Login
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features -->
+    <section class="features-section">
+        <div class="section-header">
+            <h2>Everything You Need</h2>
+            <p>A complete healthcare ecosystem designed for patients, chemists, and administrators.</p>
+        </div>
+        <div class="features-grid">
+            <div class="feature-card">
+                <div class="feature-card-icon">📋</div>
+                <h3>Digital Prescriptions</h3>
+                <p>Upload and manage prescriptions digitally. Share with chemists securely for faster order processing.
+                </p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-card-icon">🧬</div>
+                <h3>Auto Health Extraction</h3>
+                <p>Upload medical reports (PDF/image) and our system automatically extracts blood pressure, sugar,
+                    hemoglobin and more.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-card-icon">💊</div>
+                <h3>Medicine Ordering</h3>
+                <p>Search medicines across all registered chemists, check availability and place orders with
+                    prescription support.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-card-icon">🗺️</div>
+                <h3>Nearby Chemists Map</h3>
+                <p>Find chemists near you on an interactive map powered by OpenStreetMap. View contact details
+                    instantly.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-card-icon">📊</div>
+                <h3>Health Dashboard</h3>
+                <p>Track your health metrics over time with beautiful visualizations and trend indicators.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-card-icon">🚨</div>
+                <h3>Emergency Orders</h3>
+                <p>Mark orders as emergency for priority processing. Chemists receive instant notifications for urgent
+                    requests.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Roles -->
+    <section class="roles-section">
+        <div class="section-header">
+            <h2>Built for Everyone</h2>
+            <p>Three specialized portals — one unified platform.</p>
+        </div>
+        <div class="roles-grid">
+            <div class="role-card">
+                <span class="role-emoji">👤</span>
+                <h3>For Patients</h3>
+                <p>Upload prescriptions and medical reports, track health metrics, order medicines, and find nearby
+                    pharmacies.</p>
+                <a href="{{ url_for('register') }}?role=patient" class="btn btn-outline"
+                    style="color:#fff;border-color:rgba(255,255,255,.3)">
+                    Join as Patient →
+                </a>
+            </div>
+            <div class="role-card">
+                <span class="role-emoji">💊</span>
+                <h3>For Chemists</h3>
+                <p>Manage inventory, process orders, handle emergency requests, and track your pharmacy performance.</p>
+                <a href="{{ url_for('register') }}?role=chemist" class="btn btn-outline"
+                    style="color:#fff;border-color:rgba(255,255,255,.3)">
+                    Register Pharmacy →
+                </a>
+            </div>
+            <div class="role-card">
+                <span class="role-emoji">🛠️</span>
+                <h3>For Admins</h3>
+                <p>Monitor the entire ecosystem, manage users, track orders, and ensure platform integrity.</p>
+                <a href="{{ url_for('login') }}" class="btn btn-outline"
+                    style="color:#fff;border-color:rgba(255,255,255,.3)">
+                    Admin Login →
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="landing-footer">
+        <p>© 2024 MediLink – Smart Telemedicine & Pharmacy Connection System. Built with ❤️ for better healthcare.</p>
+    </footer>
+</div>
+{% endblock %}

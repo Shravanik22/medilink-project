@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Dashboard{% endblock %} | MediLink</title>
+    <meta name="description" content="MediLink Telemedicine Platform">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    {% block extra_css %}{% endblock %}
+    <link rel="icon"
+        href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💊</text></svg>">
+</head>
+
+<body>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% for cat, msg in messages %}
+    <div data-flash="{{ cat }}" style="display:none">{{ msg }}</div>
+    {% endfor %}
+    {% endwith %}
+
+    <div class="app-layout">
+        <!-- Sidebar -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-brand">
+                <a href="{{ url_for('dashboard') }}" class="brand-logo">
+                    <div class="brand-icon">💊</div>
+                    <div class="brand-text">
+                        <div class="brand-name">MediLink</div>
+                        <div class="brand-tag">Healthcare Platform</div>
+                    </div>
+                </a>
+            </div>
+
+            <div class="sidebar-user">
+                <div class="sidebar-user-info">
+                    <div class="sidebar-user-avatar">{{ session.name[0]|upper }}</div>
+                    <div>
+                        <div class="user-name">{{ session.name }}</div>
+                        <span class="user-role">{{ session.role }}</span>
+                    </div>
+                </div>
+            </div>
+
+            <nav class="sidebar-nav">
+                {% if session.role == 'patient' %}
+                <div class="nav-section-title">Patient Portal</div>
+                <a href="{{ url_for('patient_dashboard') }}" class="nav-item">
+                    <span class="nav-icon">🏠</span> Dashboard
+                </a>
+                <a href="{{ url_for('upload_prescription') }}" class="nav-item">
+                    <span class="nav-icon">📋</span> My Prescriptions
+                </a>
+                <a href="{{ url_for('upload_report') }}" class="nav-item">
+                    <span class="nav-icon">📄</span> Medical Reports
+                </a>
+                <a href="{{ url_for('health_metrics') }}" class="nav-item">
+                    <span class="nav-icon">❤️</span> Health Metrics
+                </a>
+                <a href="{{ url_for('search_medicines') }}" class="nav-item">
+                    <span class="nav-icon">💊</span> Medicines
+                </a>
+                <a href="{{ url_for('patient_orders') }}" class="nav-item">
+                    <span class="nav-icon">🛒</span> My Orders
+                </a>
+                <a href="{{ url_for('chemists_map') }}" class="nav-item">
+                    <span class="nav-icon">🗺️</span> Nearby Chemists
+                </a>
+
+                {% elif session.role == 'chemist' %}
+                <div class="nav-section-title">Chemist Panel</div>
+                <a href="{{ url_for('chemist_dashboard') }}" class="nav-item">
+                    <span class="nav-icon">🏠</span> Dashboard
+                </a>
+                <a href="{{ url_for('chemist_inventory') }}" class="nav-item">
+                    <span class="nav-icon">💊</span> Inventory
+                </a>
+                <a href="{{ url_for('chemist_orders') }}" class="nav-item">
+                    <span class="nav-icon">📦</span> Orders
+                </a>
+
+                {% elif session.role == 'admin' %}
+                <div class="nav-section-title">Admin Panel</div>
+                <a href="{{ url_for('admin_dashboard') }}" class="nav-item">
+                    <span class="nav-icon">🏠</span> Dashboard
+                </a>
+                <a href="{{ url_for('admin_users') }}" class="nav-item">
+                    <span class="nav-icon">👥</span> Manage Users
+                </a>
+                <a href="{{ url_for('admin_orders') }}" class="nav-item">
+                    <span class="nav-icon">📦</span> All Orders
+                </a>
+                {% endif %}
+            </nav>
+
+            <div class="sidebar-footer">
+                <a href="{{ url_for('logout') }}" class="logout-btn">
+                    <span>🚪</span> Logout
+                </a>
+            </div>
+        </aside>
+
+        <!-- Main -->
+        <main class="main-content">
+            <div class="page-header">
+                <div class="page-header-left">
+                    <h1>{% block page_title %}Dashboard{% endblock %}</h1>
+                    <p>{% block page_subtitle %}{% endblock %}</p>
+                </div>
+                <div class="page-header-right">
+                    {% block page_actions %}{% endblock %}
+                </div>
+            </div>
+
+            <div class="page-body">
+                {% block content %}{% endblock %}
+            </div>
+        </main>
+    </div>
+
+    <div class="toast-container"></div>
+    <div class="page-loader">
+        <div class="loader-spinner"></div>
+        <div class="loader-text">Processing…</div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    {% block extra_js %}{% endblock %}
+</body>
+
+</html>

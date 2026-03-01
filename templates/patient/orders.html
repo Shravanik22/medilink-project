@@ -1,0 +1,266 @@
+{% extends "layout.html" %}
+{% block title %}My Orders{% endblock %}
+{% block page_title %}My Orders{% endblock %}
+{% block page_subtitle %}Place and manage your medicine orders{% endblock %}
+{% block page_actions %}
+<button class="btn btn-primary" onclick="Modal.open('orderModal')">🛒 New Order</button>
+{% endblock %}
+
+{% block content %}
+<!-- Orders Table -->
+<div class="card">
+    <div class="card-header">
+        <span class="card-title">📋 Order History</span>
+        <input type="text" id="orderSearch" class="form-control" style="width:220px" placeholder="🔍 Search…">
+    </div>
+    <div class="card-body" style="padding:0">
+        {% if orders %}
+        <div class="table-wrapper" style="border:none;border-radius:0">
+            <table class="sortable" id="orderTable">
+                <thead>
+                    <tr>
+                        <th data-col="0">Order #</th>
+                        <th data-col="1">Chemist</th>
+                        <th data-col="2">Amount</th>
+                        <th data-col="3">Status</th>
+                        <th data-col="4">Date</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for o in orders %}
+                    <tr>
+                        <td><strong>#{{ o.id }}</strong> {% if o.is_emergency %}<span class="badge badge-danger">🚨
+                                Emergency</span>{% endif %}</td>
+                        <td>{{ o.shop_name }}</td>
+                        <td class="font-bold" style="color:var(--primary)">₹{{ "%.2f"|format(o.total_amount) }}</td>
+                        <td>
+                            <span class="badge badge-{{ o.status }}">
+                                {% if o.status == 'pending' %}⏳{% elif o.status == 'processing' %}🔄
+                                {% elif o.status == 'ready' %}✅{% elif o.status == 'delivered' %}📦{% else %}❌{% endif
+                                %}
+                                {{ o.status|title }}
+                            </span>
+                        </td>
+                        <td class="text-sm">{{ o.created_at.strftime('%d %b %Y') }}</td>
+                        <td>
+                            <button data-order-id="{{ o.id }}" onclick="viewOrderDetail(this.dataset.orderId)"
+                                class="btn btn-outline btn-sm">👁
+                                Details</button>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <div class="empty-icon">🛒</div>
+            <h3>No Orders Yet</h3>
+            <p>Create your first medicine order</p>
+            <button onclick="Modal.open('orderModal')" class="btn btn-primary mt-3">New Order</button>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- New Order Modal -->
+<div class="modal-overlay" id="orderModal">
+    <div class="modal modal-lg">
+        <div class="modal-header">
+            <h3>🛒 New Order</h3>
+            <button class="modal-close" onclick="Modal.close('orderModal')">×</button>
+        </div>
+        <div class="modal-body">
+            <!-- Select Chemist -->
+            <div class="form-group">
+                <label class="form-label">Select Chemist <sup>*</sup></label>
+                <select id="selChemist" class="form-control" onchange="loadMeds()">
+                    <option value="">— Choose pharmacy —</option>
+                    {% for ch in chemists %}
+                    <option value="{{ ch.id }}">{{ ch.shop_name }} — {{ ch.address or 'N/A' }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <!-- Medicine Selection -->
+            <div id="medSection" style="display:none">
+                <div class="form-group">
+                    <label class="form-label">Search & Add Medicines</label>
+                    <div style="display:flex;gap:8px">
+                        <input type="text" id="medSearch" class="form-control" placeholder="Search medicine…"
+                            oninput="filterMeds()">
+                    </div>
+                </div>
+                <div id="medList"
+                    style="max-height:200px;overflow-y:auto;border:1px solid var(--border);border-radius:var(--radius);padding:8px;margin-bottom:16px">
+                </div>
+            </div>
+
+            <!-- Cart -->
+            <div id="miniCart" style="display:none;margin-bottom:16px">
+                <label class="form-label">🛒 Selected Items</label>
+                <div id="miniCartItems"></div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label">Prescription (optional)</label>
+                    <select id="selPresc" class="form-control">
+                        <option value="">— None —</option>
+                        {% for p in prescriptions %}
+                        <option value="{{ p.id }}">{{ p.file_name }} ({{ p.uploaded_at.strftime('%d %b') }})</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Notes</label>
+                    <input type="text" id="orderNotes" class="form-control" placeholder="Delivery notes…">
+                </div>
+            </div>
+
+            <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
+                <input type="checkbox" id="isEmergency">
+                <span class="text-sm font-bold" style="color:var(--danger)">🚨 This is an Emergency Order</span>
+            </label>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-outline" onclick="Modal.close('orderModal')">Cancel</button>
+            <button class="btn btn-accent" onclick="submitOrder()" id="orderSubmitBtn">✅ Place Order</button>
+        </div>
+    </div>
+</div>
+
+<!-- Order Detail Modal -->
+<div class="modal-overlay" id="detailModal">
+    <div class="modal">
+        <div class="modal-header">
+            <h3 id="detailTitle">Order Details</h3>
+            <button class="modal-close" onclick="Modal.close('detailModal')">×</button>
+        </div>
+        <div class="modal-body" id="detailBody">
+            <div class="text-center"><span class="spinner dark"></span></div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script id="allMedsData" type="application/json">{{ medicines|tojson }}</script>
+<script>
+    const allMeds = JSON.parse(document.getElementById('allMedsData').textContent);
+    let cartItems = {};
+    let currentChemist = null;
+
+    function loadMeds() {
+        currentChemist = document.getElementById('selChemist').value;
+        if (!currentChemist) return;
+        document.getElementById('medSection').style.display = 'block';
+        filterMeds();
+    }
+
+    function filterMeds() {
+        const q = document.getElementById('medSearch').value.toLowerCase();
+        const cid = parseInt(currentChemist);
+        const filtered = allMeds.filter(m =>
+            m.chemist_id === cid &&
+            (m.name.toLowerCase().includes(q) || (m.generic_name || '').toLowerCase().includes(q))
+        );
+        const container = document.getElementById('medList');
+        if (!filtered.length) {
+            container.innerHTML = '<p class="text-muted text-sm text-center" style="padding:16px">No medicines found in this pharmacy</p>';
+            return;
+        }
+        container.innerHTML = filtered.map(m => `
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:8px;border-radius:8px;transition:.2s;border-bottom:1px solid var(--border)">
+      <div>
+        <div style="font-weight:600;font-size:13px">${m.name}</div>
+        <div style="font-size:11px;color:var(--text-muted)">₹${parseFloat(m.price).toFixed(2)} / ${m.unit} | Stock: ${m.stock}</div>
+      </div>
+      <button onclick="addMed(${m.id},'${m.name.replace(/'/g, "\\'")}',${m.price},'${m.unit}')" class="btn btn-primary btn-sm" ${m.stock === 0 ? 'disabled' : ''}>+ Add</button>
+    </div>`).join('');
+    }
+
+    function addMed(id, name, price, unit) {
+        if (!cartItems[id]) cartItems[id] = { id, name, price, qty: 0, unit };
+        cartItems[id].qty++;
+        renderMiniCart();
+    }
+
+    function renderMiniCart() {
+        const keys = Object.keys(cartItems).filter(k => cartItems[k].qty > 0);
+        const cart = document.getElementById('miniCart');
+        const items = document.getElementById('miniCartItems');
+        if (!keys.length) { cart.style.display = 'none'; return; }
+        cart.style.display = 'block';
+        const total = keys.reduce((s, k) => s + cartItems[k].price * cartItems[k].qty, 0);
+        items.innerHTML = `
+    ${keys.map(k => `
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border)">
+      <span style="font-size:13px">${cartItems[k].name}</span>
+      <div style="display:flex;align-items:center;gap:6px">
+        <button onclick="changeQty(${k},-1)" class="btn btn-ghost btn-sm">−</button>
+        <strong>${cartItems[k].qty}</strong>
+        <button onclick="changeQty(${k},1)" class="btn btn-ghost btn-sm">+</button>
+        <span style="font-size:12px;color:var(--primary);min-width:60px;text-align:right">₹${(cartItems[k].price * cartItems[k].qty).toFixed(2)}</span>
+      </div>
+    </div>`).join('')}
+    <div style="text-align:right;margin-top:8px;font-weight:700;color:var(--accent)">Total: ₹${total.toFixed(2)}</div>`;
+    }
+
+    function changeQty(id, delta) {
+        cartItems[id].qty = Math.max(0, cartItems[id].qty + delta);
+        if (cartItems[id].qty === 0) delete cartItems[id];
+        renderMiniCart();
+    }
+
+    async function submitOrder() {
+        const keys = Object.keys(cartItems);
+        if (!keys.length) { Toast.error('Add medicines first!'); return; }
+        const chemist_id = parseInt(document.getElementById('selChemist').value);
+        if (!chemist_id) { Toast.error('Select a chemist!'); return; }
+        const payload = {
+            chemist_id,
+            items: keys.map(k => ({ medicine_id: parseInt(k), quantity: cartItems[k].qty })),
+            prescription_id: document.getElementById('selPresc').value || null,
+            notes: document.getElementById('orderNotes').value,
+            is_emergency: document.getElementById('isEmergency').checked ? 1 : 0
+        };
+        const btn = document.getElementById('orderSubmitBtn');
+        btn.innerHTML = '<span class="spinner"></span>'; btn.disabled = true;
+        const data = await postJSON('{{ url_for("patient_orders") }}', payload);
+        btn.innerHTML = '✅ Place Order'; btn.disabled = false;
+        if (data.success) {
+            Toast.success('Order placed! #' + data.order_id);
+            cartItems = {};
+            Modal.close('orderModal');
+            setTimeout(() => location.reload(), 900);
+        } else {
+            Toast.error(data.message || 'Failed to place order');
+        }
+    }
+
+    async function viewOrderDetail(orderId) {
+        Modal.open('detailModal');
+        document.getElementById('detailTitle').textContent = `Order #${orderId}`;
+        document.getElementById('detailBody').innerHTML = '<div class="text-center"><span class="spinner dark"></span></div>';
+        const res = await fetch(`/chemist/orders/${orderId}/items`);
+        const data = await res.json();
+        if (data.items && data.items.length) {
+            document.getElementById('detailBody').innerHTML = `
+      <table style="width:100%;font-size:14px">
+        <thead><tr style="background:var(--surface2)"><th style="padding:8px">Medicine</th><th>Qty</th><th>Price</th><th>Total</th></tr></thead>
+        <tbody>${data.items.map(i => `
+          <tr><td style="padding:8px">${i.medicine_name}</td><td>${i.quantity} ${i.unit}</td>
+          <td>₹${parseFloat(i.price).toFixed(2)}</td>
+          <td>₹${(parseFloat(i.price) * i.quantity).toFixed(2)}</td></tr>`).join('')}
+        </tbody>
+      </table>`;
+        } else {
+            document.getElementById('detailBody').innerHTML = '<p class="text-muted text-center">No items found</p>';
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => initTableSearch('orderSearch', 'orderTable'));
+</script>
+{% endblock %}

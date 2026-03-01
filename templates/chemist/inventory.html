@@ -1,0 +1,314 @@
+{% extends "layout.html" %}
+{% block title %}Inventory Management{% endblock %}
+{% block page_title %}Inventory{% endblock %}
+{% block page_subtitle %}Manage your pharmacy medicines{% endblock %}
+{% block page_actions %}
+<button class="btn btn-primary" onclick="Modal.open('addMedModal')">+ Add Medicine</button>
+{% endblock %}
+
+{% block content %}
+<!-- Stats Row -->
+<div class="stats-grid" style="grid-template-columns:repeat(4,1fr)">
+    <div class="stat-card">
+        <div class="stat-icon blue">💊</div>
+        <div class="stat-body">
+            <div class="stat-value" data-count="{{ medicines|length }}">0</div>
+            <div class="stat-label">Total Medicines</div>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon green">✅</div>
+        <div class="stat-body">
+            <div class="stat-value" data-count="{{ medicines|selectattr('is_available','equalto',1)|list|length }}">0
+            </div>
+            <div class="stat-label">Available</div>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon orange">⚠️</div>
+        <div class="stat-body">
+            <div class="stat-value" data-count="{{ medicines|selectattr('stock','le',5)|list|length }}">0</div>
+            <div class="stat-label">Low Stock</div>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon red">❌</div>
+        <div class="stat-body">
+            <div class="stat-value" data-count="{{ medicines|selectattr('stock','equalto',0)|list|length }}">0</div>
+            <div class="stat-label">Out of Stock</div>
+        </div>
+    </div>
+</div>
+
+<!-- Inventory Table -->
+<div class="card">
+    <div class="card-header">
+        <span class="card-title">💊 Medicine Inventory</span>
+        <div style="display:flex;gap:10px">
+            <input type="text" id="invSearch" class="form-control" style="width:220px"
+                placeholder="🔍 Search medicines…">
+        </div>
+    </div>
+    <div class="card-body" style="padding:0">
+        {% if medicines %}
+        <div class="table-wrapper" style="border:none;border-radius:0">
+            <table class="sortable" id="invTable">
+                <thead>
+                    <tr>
+                        <th data-col="0">Name</th>
+                        <th data-col="1">Generic</th>
+                        <th data-col="2">Category</th>
+                        <th data-col="3">Price</th>
+                        <th data-col="4">Stock</th>
+                        <th data-col="5">Expiry Date</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for med in medicines %}
+                    <tr>
+                        <td class="font-bold">{{ med.name }}</td>
+                        <td class="text-muted text-sm">{{ med.generic_name or '–' }}</td>
+                        <td>{{ med.category or '–' }}</td>
+                        <td class="font-bold" style="color:var(--primary)">₹{{ "%.2f"|format(med.price) }}</td>
+                        <td>
+                            <div style="display:flex;align-items:center;gap:8px">
+                                <span data-stock="{{ med.stock }}" class="stock-val">
+                                    {{ med.stock }}
+                                </span>
+                                <div class="stock-bar" style="width:60px">
+                                    <div class="stock-bar-fill" data-stock="{{ med.stock }}"></div>
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            {% if med.expiry_date %}
+                            <span data-expiry="{{ med.expiry_date }}" class="badge expiry-badge">
+                                📅 {{ med.expiry_date.strftime('%d %b %Y') }}
+                            </span>
+                            {% else %}
+                            <span class="text-muted text-sm">–</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <span class="badge {{ 'badge-success' if med.is_available else 'badge-danger' }}">
+                                {{ '✅ Available' if med.is_available else '❌ Unavailable' }}
+                            </span>
+                        </td>
+                        <td>
+                            <div style="display:flex;gap:6px">
+                                <button data-med='{{ med|tojson }}' onclick="editMedFromBtn(this)"
+                                    class="btn btn-outline btn-sm">✏️</button>
+                                <button data-med-id="{{ med.id }}" data-med-name="{{ med.name|e }}"
+                                    onclick="deleteMedFromBtn(this)" class="btn btn-danger btn-sm">🗑</button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <div class="empty-icon">💊</div>
+            <h3>No Medicines Added</h3>
+            <p>Add your first medicine to the inventory</p>
+            <button onclick="Modal.open('addMedModal')" class="btn btn-primary mt-3">+ Add Medicine</button>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Add Medicine Modal -->
+<div class="modal-overlay" id="addMedModal">
+    <div class="modal modal-lg">
+        <div class="modal-header">
+            <h3 id="medModalTitle">+ Add Medicine</h3>
+            <button class="modal-close" onclick="Modal.close('addMedModal')">×</button>
+        </div>
+        <div class="modal-body">
+            <input type="hidden" id="editMedId">
+            <div class="form-grid cols-2">
+                <div class="form-group">
+                    <label class="form-label">Medicine Name <sup>*</sup></label>
+                    <input type="text" id="mName" class="form-control" placeholder="e.g., Paracetamol 500mg" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Generic Name</label>
+                    <input type="text" id="mGeneric" class="form-control" placeholder="e.g., Acetaminophen">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Category</label>
+                    <input type="text" id="mCategory" class="form-control" placeholder="e.g., Analgesic, Antibiotic">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Unit</label>
+                    <select id="mUnit" class="form-control">
+                        <option value="strip">Strip</option>
+                        <option value="tablet">Tablet</option>
+                        <option value="bottle">Bottle</option>
+                        <option value="syrup">Syrup</option>
+                        <option value="injection">Injection</option>
+                        <option value="capsule">Capsule</option>
+                        <option value="cream">Cream/Ointment</option>
+                        <option value="drops">Drops</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Price (₹) <sup>*</sup></label>
+                    <input type="number" id="mPrice" class="form-control" step="0.01" min="0" placeholder="0.00"
+                        required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Stock Quantity <sup>*</sup></label>
+                    <input type="number" id="mStock" class="form-control" min="0" placeholder="0" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Expiry Date</label>
+                    <input type="date" id="mExpiry" class="form-control">
+                    <small class="text-muted" style="font-size:11px">Leave blank if not applicable</small>
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Description</label>
+                <textarea id="mDesc" class="form-control" rows="2" placeholder="Usage, dosage notes…"></textarea>
+            </div>
+            <div id="editStatusRow" style="display:none">
+                <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
+                    <input type="checkbox" id="mAvailable" checked>
+                    <span class="form-label" style="margin:0">Mark as Available</span>
+                </label>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-outline" onclick="Modal.close('addMedModal')">Cancel</button>
+            <button class="btn btn-primary" id="saveMedBtn" onclick="saveMedicine()">💾 Save Medicine</button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    let editingId = null;
+
+    // Wrapper to read data attribute and call editMed
+    function editMedFromBtn(btn) {
+        editMed(JSON.parse(btn.dataset.med));
+    }
+
+    // Wrapper to delete via data attributes
+    function deleteMedFromBtn(btn) {
+        deleteMed(parseInt(btn.dataset.medId), btn.dataset.medName);
+    }
+
+    function editMed(med) {
+        editingId = med.id;
+        document.getElementById('medModalTitle').textContent = '✏️ Edit Medicine';
+        document.getElementById('editMedId').value = med.id;
+        document.getElementById('mName').value = med.name;
+        document.getElementById('mGeneric').value = med.generic_name || '';
+        document.getElementById('mCategory').value = med.category || '';
+        document.getElementById('mUnit').value = med.unit || 'strip';
+        document.getElementById('mPrice').value = med.price;
+        document.getElementById('mStock').value = med.stock;
+        document.getElementById('mDesc').value = med.description || '';
+        document.getElementById('mExpiry').value = med.expiry_date || '';
+        document.getElementById('mAvailable').checked = med.is_available == 1;
+        document.getElementById('editStatusRow').style.display = 'block';
+        Modal.open('addMedModal');
+    }
+
+    function resetForm() {
+        editingId = null;
+        document.getElementById('medModalTitle').textContent = '+ Add Medicine';
+        ['mName', 'mGeneric', 'mCategory', 'mPrice', 'mStock', 'mDesc', 'mExpiry'].forEach(id =>
+            document.getElementById(id).value = '');
+        document.getElementById('mUnit').value = 'strip';
+        document.getElementById('mAvailable').checked = true;
+        document.getElementById('editStatusRow').style.display = 'none';
+    }
+
+    document.getElementById('addMedModal')?.addEventListener('click', e => {
+        if (e.target === document.getElementById('addMedModal')) resetForm();
+    });
+
+    async function saveMedicine() {
+        const name = document.getElementById('mName').value.trim();
+        const price = parseFloat(document.getElementById('mPrice').value);
+        const stock = parseInt(document.getElementById('mStock').value);
+
+        if (!name) { Toast.error('Medicine name is required'); return; }
+        if (isNaN(price)) { Toast.error('Valid price required'); return; }
+        if (isNaN(stock)) { Toast.error('Valid stock required'); return; }
+
+        const btn = document.getElementById('saveMedBtn');
+        const orig = btn.innerHTML;
+        btn.innerHTML = '<span class="spinner"></span>'; btn.disabled = true;
+
+        const payload = {
+            action: editingId ? 'update' : 'add',
+            id: editingId,
+            name, price, stock,
+            generic_name: document.getElementById('mGeneric').value,
+            category: document.getElementById('mCategory').value,
+            unit: document.getElementById('mUnit').value,
+            description: document.getElementById('mDesc').value,
+            expiry_date: document.getElementById('mExpiry').value || null,
+            is_available: document.getElementById('mAvailable').checked ? 1 : 0
+        };
+
+        const data = await postJSON('{{ url_for("chemist_inventory") }}', payload);
+        btn.innerHTML = orig; btn.disabled = false;
+
+        if (data.success) {
+            Toast.success(data.message);
+            Modal.close('addMedModal');
+            resetForm();
+            setTimeout(() => location.reload(), 800);
+        } else {
+            Toast.error(data.message);
+        }
+    }
+
+    async function deleteMed(id, name) {
+        const ok = await confirmAction(`Delete <strong>${name}</strong> from inventory?`);
+        if (!ok) return;
+        const data = await postJSON('{{ url_for("chemist_inventory") }}', { action: 'delete', id });
+        if (data.success) { Toast.success(data.message); setTimeout(() => location.reload(), 600); }
+        else Toast.error(data.message);
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        initTableSearch('invSearch', 'invTable');
+        // Apply stock-bar styles from data-stock
+        document.querySelectorAll('.stock-bar-fill[data-stock]').forEach(el => {
+            const s = parseInt(el.dataset.stock);
+            el.style.width = Math.min(s * 5, 100) + '%';
+            el.classList.add(s > 10 ? 'stock-high' : (s > 3 ? 'stock-mid' : 'stock-low'));
+        });
+        document.querySelectorAll('.stock-val[data-stock]').forEach(el => {
+            const s = parseInt(el.dataset.stock);
+            if (s === 0) { el.style.color = 'var(--danger)'; el.style.fontWeight = '700'; }
+            else if (s <= 5) { el.style.color = 'var(--warning)'; el.style.fontWeight = '700'; }
+        });
+        // Color-code expiry badges
+        const today = new Date(); today.setHours(0, 0, 0, 0);
+        document.querySelectorAll('.expiry-badge[data-expiry]').forEach(el => {
+            const exp = new Date(el.dataset.expiry);
+            const diff = Math.floor((exp - today) / 86400000); // days
+            if (diff < 0) {
+                el.classList.add('badge-danger');
+                el.title = 'EXPIRED';
+            } else if (diff <= 30) {
+                el.classList.add('badge-warning');
+                el.title = `Expires in ${diff} day(s)`;
+            } else {
+                el.classList.add('badge-success');
+                el.title = `Valid for ${diff} days`;
+            }
+        });
+    });
+</script>
+{% endblock %}

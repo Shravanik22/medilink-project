@@ -1,0 +1,169 @@
+{% extends "base.html" %}
+{% block title %}Register{% endblock %}
+{% block body %}
+<div class="auth-wrapper">
+    <div class="auth-left">
+        <div class="auth-left-content">
+            <div class="auth-logo-big">💊</div>
+            <h1>Join MediLink</h1>
+            <p>Register as a patient or chemist to access India's smartest telemedicine platform.</p>
+            <div class="auth-features">
+                <div class="auth-feature">
+                    <div class="auth-feature-icon">✅</div> Free to use
+                </div>
+                <div class="auth-feature">
+                    <div class="auth-feature-icon">🔒</div> Secure & private
+                </div>
+                <div class="auth-feature">
+                    <div class="auth-feature-icon">⚡</div> Instant access
+                </div>
+                <div class="auth-feature">
+                    <div class="auth-feature-icon">🏥</div> Trusted by patients
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="auth-right">
+        <div class="auth-form-box animate-slide-up" style="max-width:420px">
+            <h2>Create Account</h2>
+            <p class="subtitle">Fill in your details to get started</p>
+
+            <!-- Role Selector -->
+            <div style="display:flex;gap:10px;margin-bottom:20px">
+                <label class="role-tab active" id="tab-patient"
+                    style="flex:1;padding:10px;border:2px solid var(--primary);border-radius:var(--radius);text-align:center;cursor:pointer;transition:all .2s;font-weight:600;font-size:14px;background:var(--primary-light);color:var(--primary)">
+                    <input type="radio" name="role_sel" value="patient" checked style="display:none"> 👤 Patient
+                </label>
+                <label class="role-tab" id="tab-chemist"
+                    style="flex:1;padding:10px;border:2px solid var(--border);border-radius:var(--radius);text-align:center;cursor:pointer;transition:all .2s;font-weight:600;font-size:14px;color:var(--text-muted)">
+                    <input type="radio" name="role_sel" value="chemist" style="display:none"> 💊 Chemist
+                </label>
+            </div>
+
+            <form id="registerForm">
+                <input type="hidden" name="role" id="roleInput" value="patient">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Full Name <sup>*</sup></label>
+                        <input type="text" name="name" class="form-control" placeholder="Your name" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Phone</label>
+                        <input type="tel" name="phone" class="form-control" placeholder="98xxxxxxxx">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Email Address <sup>*</sup></label>
+                    <input type="email" name="email" class="form-control" placeholder="you@example.com" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Password <sup>*</sup></label>
+                    <input type="password" name="password" class="form-control" placeholder="Min 6 characters" required
+                        minlength="6">
+                </div>
+
+                <!-- Chemist-only fields -->
+                <div id="chemistFields" style="display:none">
+                    <div class="auth-divider">Pharmacy Details</div>
+                    <div class="form-group">
+                        <label class="form-label">Shop Name <sup>*</sup></label>
+                        <input type="text" name="shop_name" id="shopName" class="form-control"
+                            placeholder="MedPlus Pharmacy">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">License Number</label>
+                        <input type="text" name="license_no" class="form-control" placeholder="PH/2024/XXXXX">
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Latitude</label>
+                            <input type="number" name="latitude" id="lat" class="form-control" step="any"
+                                placeholder="20.5937">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Longitude</label>
+                            <input type="number" name="longitude" id="lng" class="form-control" step="any"
+                                placeholder="78.9629">
+                        </div>
+                    </div>
+                    <button type="button" onclick="getLocation()" class="btn btn-outline btn-sm w-100 mb-3">
+                        📍 Use My Location
+                    </button>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Address</label>
+                    <textarea name="address" class="form-control" rows="2"
+                        placeholder="Your address (optional)"></textarea>
+                </div>
+
+                <button type="submit" id="regBtn" class="btn btn-primary w-100 btn-lg">
+                    🚀 Create Account
+                </button>
+            </form>
+
+            <div class="auth-link">
+                Already have an account? <a href="{{ url_for('login') }}">Sign in</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+{% block extra_js %}
+<script>
+    // Role tabs
+    document.querySelectorAll('.role-tab').forEach(tab => {
+        tab.addEventListener('click', () => {
+            const val = tab.querySelector('input').value;
+            document.getElementById('roleInput').value = val;
+            document.querySelectorAll('.role-tab').forEach(t => {
+                t.style.border = '2px solid var(--border)';
+                t.style.background = 'transparent';
+                t.style.color = 'var(--text-muted)';
+            });
+            tab.style.border = '2px solid var(--primary)';
+            tab.style.background = 'var(--primary-light)';
+            tab.style.color = 'var(--primary)';
+            document.getElementById('chemistFields').style.display =
+                val === 'chemist' ? 'block' : 'none';
+            document.getElementById('shopName').required = val === 'chemist';
+        });
+    });
+
+    function getLocation() {
+        if (!navigator.geolocation) { Toast.error('Geolocation not supported'); return; }
+        navigator.geolocation.getCurrentPosition(pos => {
+            document.getElementById('lat').value = pos.coords.latitude.toFixed(6);
+            document.getElementById('lng').value = pos.coords.longitude.toFixed(6);
+            Toast.success('Location captured!');
+        }, () => Toast.error('Could not get location'));
+    }
+
+    document.getElementById('registerForm').addEventListener('submit', async e => {
+        e.preventDefault();
+        const btn = document.getElementById('regBtn');
+        const orig = btn.innerHTML;
+        btn.innerHTML = '<span class="spinner"></span> Creating account…';
+        btn.disabled = true;
+        const fd = new FormData(e.target);
+        try {
+            const res = await fetch('{{ url_for("register") }}', { method: 'POST', body: fd });
+            const data = await res.json();
+            if (data.success) {
+                Toast.success(data.message);
+                setTimeout(() => location.href = '{{ url_for("login") }}', 1200);
+            } else {
+                Toast.error(data.message);
+                btn.innerHTML = orig; btn.disabled = false;
+            }
+        } catch {
+            Toast.error('Network error.'); btn.innerHTML = orig; btn.disabled = false;
+        }
+    });
+
+    // Pre-select from URL
+    const params = new URLSearchParams(location.search);
+    if (params.get('role') === 'chemist') document.getElementById('tab-chemist').click();
+</script>
+{% endblock %}

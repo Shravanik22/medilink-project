@@ -1,0 +1,83 @@
+{% extends "layout.html" %}
+{% block title %}Manage Users{% endblock %}
+{% block page_title %}User Management{% endblock %}
+{% block page_subtitle %}All registered users on the platform{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <span class="card-title">👥 All Users</span>
+        <div style="display:flex;gap:10px;align-items:center">
+            <input type="text" id="userSearch" class="form-control" style="width:220px" placeholder="🔍 Search users…">
+            <span class="badge badge-info">{{ users|length }} total</span>
+        </div>
+    </div>
+    <div class="card-body" style="padding:0">
+        <div class="table-wrapper" style="border:none;border-radius:0">
+            <table class="sortable" id="userTable">
+                <thead>
+                    <tr>
+                        <th data-col="0">Name</th>
+                        <th data-col="1">Email</th>
+                        <th data-col="2">Role</th>
+                        <th data-col="3">Phone</th>
+                        <th data-col="4">Joined</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for u in users %}
+                    <tr id="user-row-{{ u.id }}">
+                        <td>
+                            <div style="display:flex;align-items:center;gap:10px">
+                                <div
+                                    style="width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,var(--primary),var(--accent));display:grid;place-items:center;color:#fff;font-weight:700;font-size:13px;flex-shrink:0">
+                                    {{ u.name[0]|upper }}
+                                </div>
+                                <div class="font-bold">{{ u.name }}</div>
+                            </div>
+                        </td>
+                        <td class="text-muted text-sm">{{ u.email }}</td>
+                        <td>
+                            <span
+                                class="badge {{ 'badge-info' if u.role=='patient' else ('badge-success' if u.role=='chemist' else 'badge-warning') }}">
+                                {% if u.role == 'patient' %}👤{% elif u.role == 'chemist' %}💊{% else %}🛠️{% endif %}
+                                {{ u.role|title }}
+                            </span>
+                        </td>
+                        <td class="text-sm">{{ u.phone or '–' }}</td>
+                        <td class="text-sm">{{ u.created_at.strftime('%d %b %Y') }}</td>
+                        <td>
+                            {% if u.role != 'admin' %}
+                            <button data-user-id="{{ u.id }}" data-user-name="{{ u.name|e }}"
+                                onclick="removeUser(this.dataset.userId, this.dataset.userName)"
+                                class="btn btn-danger btn-sm">🗑 Remove</button>
+                            {% else %}
+                            <span class="badge badge-warning">Protected</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    async function removeUser(id, name) {
+        const ok = await confirmAction(`Are you sure you want to remove <strong>${name}</strong>?`);
+        if (!ok) return;
+        const data = await postJSON('{{ url_for("toggle_user") }}', { user_id: id });
+        if (data.success) {
+            Toast.success(data.message);
+            document.getElementById('user-row-' + id)?.remove();
+        } else {
+            Toast.error(data.message);
+        }
+    }
+    document.addEventListener('DOMContentLoaded', () => initTableSearch('userSearch', 'userTable'));
+</script>
+{% endblock %}

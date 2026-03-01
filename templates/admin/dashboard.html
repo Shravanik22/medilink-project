@@ -1,0 +1,201 @@
+{% extends "layout.html" %}
+{% block title %}Admin Dashboard{% endblock %}
+{% block page_title %}Admin Dashboard{% endblock %}
+{% block page_subtitle %}System overview and analytics{% endblock %}
+
+{% block content %}
+<!-- Stats -->
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-icon blue">👥</div>
+        <div class="stat-body">
+            <div class="stat-value" data-count="{{ total_patients }}">0</div>
+            <div class="stat-label">Registered Patients</div>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon green">🏪</div>
+        <div class="stat-body">
+            <div class="stat-value" data-count="{{ total_chemists }}">0</div>
+            <div class="stat-label">Active Chemists</div>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon orange">📦</div>
+        <div class="stat-body">
+            <div class="stat-value" data-count="{{ total_orders }}">0</div>
+            <div class="stat-label">Total Orders</div>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon red">⏳</div>
+        <div class="stat-body">
+            <div class="stat-value" data-count="{{ pending_orders }}">0</div>
+            <div class="stat-label">Pending Orders</div>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon purple">💊</div>
+        <div class="stat-body">
+            <div class="stat-value" data-count="{{ total_meds }}">0</div>
+            <div class="stat-label">Listed Medicines</div>
+        </div>
+    </div>
+</div>
+
+<div class="grid-2">
+    <!-- Order Status Chart -->
+    <div class="card">
+        <div class="card-header">
+            <span class="card-title">📊 Order Analytics</span>
+        </div>
+        <div class="card-body">
+            <canvas id="orderChart" height="200"></canvas>
+            <div id="orderLegend" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:16px;justify-content:center">
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Orders -->
+    <div class="card">
+        <div class="card-header">
+            <span class="card-title">📦 Recent Orders</span>
+            <a href="{{ url_for('admin_orders') }}" class="btn btn-ghost btn-sm">View All →</a>
+        </div>
+        <div class="card-body" style="padding:0">
+            {% if recent_orders %}
+            <div class="table-wrapper" style="border:none;border-radius:0">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Patient</th>
+                            <th>Chemist</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for o in recent_orders %}
+                        <tr>
+                            <td>#{{ o.id }}</td>
+                            <td class="text-sm">{{ o.patient_name }}</td>
+                            <td class="text-sm">{{ o.shop_name }}</td>
+                            <td><span class="badge badge-{{ o.status }}">{{ o.status|title }}</span></td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="empty-state" style="padding:30px">
+                <div class="empty-icon">📦</div>
+                <h3>No Orders</h3>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Recent Users -->
+<div class="card mt-5">
+    <div class="card-header">
+        <span class="card-title">👥 Recent Registrations</span>
+        <a href="{{ url_for('admin_users') }}" class="btn btn-ghost btn-sm">Manage Users →</a>
+    </div>
+    <div class="card-body" style="padding:0">
+        <div class="table-wrapper" style="border:none;border-radius:0">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Email</th>
+                        <th>Role</th>
+                        <th>Phone</th>
+                        <th>Joined</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for u in recent_users %}
+                    <tr>
+                        <td class="font-bold">{{ u.name }}</td>
+                        <td class="text-sm text-muted">{{ u.email }}</td>
+                        <td>
+                            <span
+                                class="badge {{ 'badge-info' if u.role=='patient' else ('badge-success' if u.role=='chemist' else 'badge-warning') }}">
+                                {{ u.role|title }}
+                            </span>
+                        </td>
+                        <td class="text-sm">{{ u.phone or '–' }}</td>
+                        <td class="text-sm">{{ u.created_at.strftime('%d %b %Y') }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script id="orderStatsData" type="application/json">{{ order_stats }}</script>
+<script>
+    // Simple pie chart using Canvas
+    const stats = JSON.parse(document.getElementById('orderStatsData').textContent);
+    const colors = {
+        pending: '#F59E0B', processing: '#F97316', ready: '#3B82F6',
+        delivered: '#10B981', cancelled: '#EF4444'
+    };
+    const labels = Object.keys(stats);
+    const values = Object.values(stats);
+    const total = values.reduce((a, b) => a + b, 0);
+
+    if (total > 0) {
+        const canvas = document.getElementById('orderChart');
+        const ctx = canvas.getContext('2d');
+        const cx = canvas.width / 2;
+        const cy = canvas.height / 2;
+        const r = Math.min(cx, cy) - 20;
+
+        let startAngle = -Math.PI / 2;
+        labels.forEach((label, i) => {
+            const slice = (values[i] / total) * 2 * Math.PI;
+            ctx.beginPath();
+            ctx.moveTo(cx, cy);
+            ctx.arc(cx, cy, r, startAngle, startAngle + slice);
+            ctx.closePath();
+            ctx.fillStyle = colors[label] || '#94a3b8';
+            ctx.fill();
+            startAngle += slice;
+        });
+
+        // Donut hole
+        ctx.beginPath();
+        ctx.arc(cx, cy, r * 0.55, 0, 2 * Math.PI);
+        ctx.fillStyle = 'white';
+        ctx.fill();
+
+        // Center text
+        ctx.fillStyle = '#1e293b';
+        ctx.font = 'bold 22px Outfit, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(total, cx, cy - 8);
+        ctx.font = '13px Inter, sans-serif';
+        ctx.fillStyle = '#64748b';
+        ctx.fillText('Total Orders', cx, cy + 12);
+
+        // Legend
+        const legend = document.getElementById('orderLegend');
+        labels.forEach((label, i) => {
+            legend.innerHTML += `
+      <div style="display:flex;align-items:center;gap:6px;font-size:12px">
+        <div style="width:12px;height:12px;border-radius:3px;background:${colors[label] || '#94a3b8'}"></div>
+        ${label.charAt(0).toUpperCase() + label.slice(1)}: <strong>${values[i]}</strong>
+      </div>`;
+        });
+    } else {
+        document.getElementById('orderChart').parentElement.innerHTML +=
+            '<p class="text-muted text-center">No order data yet</p>';
+    }
+</script>
+{% endblock %}

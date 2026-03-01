@@ -1,0 +1,138 @@
+{% extends "layout.html" %}
+{% block title %}Health Metrics{% endblock %}
+{% block page_title %}Health Metrics{% endblock %}
+{% block page_subtitle %}Auto-extracted from your medical reports{% endblock %}
+{% block page_actions %}
+<a href="{{ url_for('upload_report') }}" class="btn btn-primary">📤 Upload Report</a>
+{% endblock %}
+
+{% block content %}
+{% if metrics_list %}
+{% set latest = metrics_list[0] %}
+<!-- Latest Metrics -->
+<div class="card mb-5">
+    <div class="card-header">
+        <span class="card-title">✨ Latest Health Snapshot</span>
+        <span class="text-sm text-muted">From: {{ latest.file_name or 'Manual' }}</span>
+    </div>
+    <div class="card-body">
+        <div class="metric-cards-grid">
+            {% if latest.blood_pressure %}
+            <div class="metric-card">
+                <div class="metric-icon">🩺</div>
+                <div class="metric-value">{{ latest.blood_pressure }}</div>
+                <div class="metric-label">Blood Pressure</div>
+                <span class="metric-status normal">Normal</span>
+            </div>
+            {% endif %}
+            {% if latest.sugar %}
+            <div class="metric-card">
+                <div class="metric-icon">🍬</div>
+                <div class="metric-value">{{ latest.sugar }}</div>
+                <div class="metric-label">Blood Sugar</div>
+                <span class="metric-status normal">Normal</span>
+            </div>
+            {% endif %}
+            {% if latest.hemoglobin %}
+            <div class="metric-card">
+                <div class="metric-icon">🔴</div>
+                <div class="metric-value">{{ latest.hemoglobin }}</div>
+                <div class="metric-label">Hemoglobin</div>
+                <span class="metric-status normal">Normal</span>
+            </div>
+            {% endif %}
+            {% if latest.cholesterol %}
+            <div class="metric-card">
+                <div class="metric-icon">🫀</div>
+                <div class="metric-value">{{ latest.cholesterol }}</div>
+                <div class="metric-label">Cholesterol</div>
+                <span class="metric-status normal">Normal</span>
+            </div>
+            {% endif %}
+            {% if latest.heart_rate %}
+            <div class="metric-card">
+                <div class="metric-icon">💓</div>
+                <div class="metric-value">{{ latest.heart_rate }}</div>
+                <div class="metric-label">Heart Rate</div>
+                <span class="metric-status normal">Normal</span>
+            </div>
+            {% endif %}
+            {% if latest.weight %}
+            <div class="metric-card">
+                <div class="metric-icon">⚖️</div>
+                <div class="metric-value">{{ latest.weight }}</div>
+                <div class="metric-label">Weight</div>
+                <span class="metric-status normal">Normal</span>
+            </div>
+            {% endif %}
+            {% if latest.height %}
+            <div class="metric-card">
+                <div class="metric-icon">📏</div>
+                <div class="metric-value">{{ latest.height }}</div>
+                <div class="metric-label">Height</div>
+                <span class="metric-status normal">—</span>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- History Table -->
+<div class="card">
+    <div class="card-header">
+        <span class="card-title">📅 History</span>
+        <input type="text" id="metricsSearch" class="form-control" style="width:220px" placeholder="🔍 Search records…">
+    </div>
+    <div class="card-body" style="padding:0">
+        <div class="table-wrapper" style="border:none;border-radius:0">
+            <table class="sortable" id="metricsTable">
+                <thead>
+                    <tr>
+                        <th data-col="0">Date</th>
+                        <th data-col="1">BP</th>
+                        <th data-col="2">Sugar</th>
+                        <th data-col="3">Hemoglobin</th>
+                        <th data-col="4">Cholesterol</th>
+                        <th data-col="5">Heart Rate</th>
+                        <th data-col="6">Weight</th>
+                        <th>Source</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for m in metrics_list %}
+                    <tr>
+                        <td class="text-sm">{{ m.recorded_at.strftime('%d %b %Y') }}</td>
+                        <td>{{ m.blood_pressure or '–' }}</td>
+                        <td>{{ m.sugar or '–' }}</td>
+                        <td>{{ m.hemoglobin or '–' }}</td>
+                        <td>{{ m.cholesterol or '–' }}</td>
+                        <td>{{ m.heart_rate or '–' }}</td>
+                        <td>{{ m.weight or '–' }}</td>
+                        <td class="text-xs text-muted">{{ m.file_name or 'Manual' }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% else %}
+<div class="card">
+    <div class="card-body">
+        <div class="empty-state">
+            <div class="empty-icon">🧬</div>
+            <h3>No Health Metrics Yet</h3>
+            <p>Upload a medical report to automatically extract your health data.</p>
+            <a href="{{ url_for('upload_report') }}" class="btn btn-primary" style="margin-top:16px">📤 Upload
+                Report</a>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', () => initTableSearch('metricsSearch', 'metricsTable'));
+</script>
+{% endblock %}

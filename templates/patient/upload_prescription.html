@@ -1,0 +1,113 @@
+{% extends "layout.html" %}
+{% block title %}Upload Prescription{% endblock %}
+{% block page_title %}Upload Prescription{% endblock %}
+{% block page_subtitle %}Upload your doctor's prescription for medicine orders{% endblock %}
+
+{% block content %}
+<div class="grid-2">
+    <!-- Upload Form -->
+    <div class="card">
+        <div class="card-header">
+            <span class="card-title">📋 New Prescription</span>
+        </div>
+        <div class="card-body">
+            <form id="prescForm">
+                <div class="form-group">
+                    <label class="form-label">Prescription File <sup>*</sup></label>
+                    <div class="drop-zone" id="dropZone">
+                        <input type="file" name="file" id="prescFile" accept=".pdf,.jpg,.jpeg,.png" style="display:none"
+                            required>
+                        <div class="dz-icon">📋</div>
+                        <div class="dz-text">
+                            <strong>Click or drag</strong> to upload prescription<br>
+                            <small>PDF, JPG, PNG up to 16MB</small>
+                        </div>
+                        <div class="dz-selected" style="margin-top:10px;font-weight:600;color:var(--primary)"></div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Notes (optional)</label>
+                    <textarea name="notes" class="form-control" rows="3"
+                        placeholder="Additional notes for the chemist…"></textarea>
+                </div>
+                <button type="submit" id="prescBtn" class="btn btn-primary w-100 btn-lg">
+                    📤 Upload Prescription
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Prescriptions List -->
+    <div class="card">
+        <div class="card-header">
+            <span class="card-title">📁 My Prescriptions</span>
+            <span class="badge badge-info">{{ prescriptions|length }}</span>
+        </div>
+        <div class="card-body" style="padding:0">
+            {% if prescriptions %}
+            <div class="table-wrapper" style="border:none;border-radius:0">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>File</th>
+                            <th>Date</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for p in prescriptions %}
+                        <tr>
+                            <td>
+                                <div style="font-weight:600;font-size:13px">{{ p.file_name }}</div>
+                                {% if p.notes %}
+                                <div class="text-xs text-muted">{{ p.notes[:60] }}{% if p.notes|length > 60 %}…{% endif
+                                    %}</div>
+                                {% endif %}
+                            </td>
+                            <td class="text-sm">{{ p.uploaded_at.strftime('%d %b %Y') }}</td>
+                            <td>
+                                <span class="badge {{ 'badge-success' if p.is_verified else 'badge-warning' }}">
+                                    {{ '✓ Verified' if p.is_verified else '⏳ Pending' }}
+                                </span>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="empty-state">
+                <div class="empty-icon">📋</div>
+                <h3>No Prescriptions</h3>
+                <p>Upload your first prescription</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.getElementById('prescForm').addEventListener('submit', async e => {
+        e.preventDefault();
+        const btn = document.getElementById('prescBtn');
+        Loader.show('Uploading prescription…');
+        const fd = new FormData(e.target);
+        try {
+            const res = await fetch('{{ url_for("upload_prescription") }}', { method: 'POST', body: fd });
+            const data = await res.json();
+            Loader.hide();
+            if (data.success) {
+                Toast.success(data.message);
+                setTimeout(() => location.reload(), 1000);
+            } else {
+                Toast.error(data.message);
+            }
+        } catch {
+            Loader.hide();
+            Toast.error('Upload failed. Please try again.');
+        }
+    });
+</script>
+{% endblock %}

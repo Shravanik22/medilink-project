@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+{% block title %}Login{% endblock %}
+{% block body %}
+<div class="auth-wrapper">
+    <div class="auth-left">
+        <div class="auth-left-content">
+            <div class="auth-logo-big">💊</div>
+            <h1>MediLink</h1>
+            <p>Your smart healthcare companion. Connect with chemists, manage prescriptions, and track your health — all
+                in one place.</p>
+            <div class="auth-features">
+                <div class="auth-feature">
+                    <div class="auth-feature-icon">📋</div>
+                    Digital prescription management
+                </div>
+                <div class="auth-feature">
+                    <div class="auth-feature-icon">🧬</div>
+                    Auto-extract health metrics from reports
+                </div>
+                <div class="auth-feature">
+                    <div class="auth-feature-icon">🗺️</div>
+                    Find nearby chemists on map
+                </div>
+                <div class="auth-feature">
+                    <div class="auth-feature-icon">💊</div>
+                    Order medicines online
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="auth-right">
+        <div class="auth-form-box animate-slide-up">
+            <h2>Welcome back 👋</h2>
+            <p class="subtitle">Sign in to your MediLink account</p>
+
+            <form id="loginForm">
+                <div class="form-group">
+                    <label class="form-label" for="email">Email Address <sup>*</sup></label>
+                    <input type="email" id="email" name="email" class="form-control" placeholder="you@example.com"
+                        required autocomplete="email">
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="password">Password <sup>*</sup></label>
+                    <input type="password" id="password" name="password" class="form-control" placeholder="••••••••"
+                        required autocomplete="current-password">
+                </div>
+                <button type="submit" id="loginBtn" class="btn btn-primary w-100 btn-lg">
+                    🔑 Sign In
+                </button>
+            </form>
+
+            <div class="auth-divider">or</div>
+
+            <div class="auth-link">
+                Don't have an account? <a href="{{ url_for('register') }}">Create one free</a>
+            </div>
+            <div class="auth-link mt-2" style="margin-top:12px">
+                <a href="{{ url_for('index') }}" style="color:var(--text-muted)">← Back to home</a>
+            </div>
+
+            <!-- Demo credentials -->
+            <div
+                style="margin-top:24px;padding:14px;background:var(--surface2);border-radius:var(--radius);border:1px solid var(--border)">
+                <p style="font-size:12px;font-weight:700;color:var(--text-muted);margin-bottom:8px">🔑 DEMO CREDENTIALS
+                </p>
+                <div style="display:flex;flex-direction:column;gap:4px">
+                    <button onclick="fillDemo('admin@medilink.com','admin123')"
+                        style="font-size:12px;padding:4px 8px;background:var(--primary-light);color:var(--primary);border:none;border-radius:6px;cursor:pointer;text-align:left">
+                        🛠️ Admin: admin@medilink.com / admin123
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+{% block extra_js %}
+<script>
+    function fillDemo(email, pw) {
+        document.getElementById('email').value = email;
+        document.getElementById('password').value = pw;
+    }
+    document.getElementById('loginForm').addEventListener('submit', async e => {
+        e.preventDefault();
+        const btn = document.getElementById('loginBtn');
+        const orig = btn.innerHTML;
+        btn.innerHTML = '<span class="spinner"></span> Signing in…';
+        btn.disabled = true;
+        const fd = new FormData(e.target);
+        try {
+            const res = await fetch('{{ url_for("login") }}', { method: 'POST', body: fd });
+            const data = await res.json();
+            if (data.success) {
+                Toast.success('Login successful! Redirecting…');
+                setTimeout(() => location.href = data.redirect, 800);
+            } else {
+                Toast.error(data.message || 'Invalid credentials.');
+                btn.innerHTML = orig;
+                btn.disabled = false;
+            }
+        } catch {
+            Toast.error('Network error. Please try again.');
+            btn.innerHTML = orig;
+            btn.disabled = false;
+        }
+    });
+</script>
+{% endblock %}

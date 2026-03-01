@@ -1,0 +1,146 @@
+{% extends "layout.html" %}
+{% block title %}Chemist Dashboard{% endblock %}
+{% block page_title %}Pharmacy Dashboard{% endblock %}
+{% block page_subtitle %}{{ chemist.shop_name }} — Overview{% endblock %}
+{% block page_actions %}
+<a href="{{ url_for('chemist_inventory') }}" class="btn btn-primary">💊 Manage Inventory</a>
+{% endblock %}
+
+{% block content %}
+<!-- Stats -->
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-icon blue">💊</div>
+        <div class="stat-body">
+            <div class="stat-value" data-count="{{ total_meds }}">0</div>
+            <div class="stat-label">Total Medicines</div>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon orange">⚠️</div>
+        <div class="stat-body">
+            <div class="stat-value" data-count="{{ low_stock }}">0</div>
+            <div class="stat-label">Low Stock Items</div>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon red">⏳</div>
+        <div class="stat-body">
+            <div class="stat-value" data-count="{{ pending_orders }}">0</div>
+            <div class="stat-label">Pending Orders</div>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon green">📦</div>
+        <div class="stat-body">
+            <div class="stat-value" data-count="{{ total_orders }}">0</div>
+            <div class="stat-label">Total Orders</div>
+        </div>
+    </div>
+</div>
+
+<div class="grid-2">
+    <!-- Recent Orders -->
+    <div class="card">
+        <div class="card-header">
+            <span class="card-title">📦 Recent Orders</span>
+            <a href="{{ url_for('chemist_orders') }}" class="btn btn-ghost btn-sm">View All →</a>
+        </div>
+        <div class="card-body" style="padding:0">
+            {% if recent_orders %}
+            <div class="table-wrapper" style="border:none;border-radius:0">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Order</th>
+                            <th>Patient</th>
+                            <th>Amount</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for o in recent_orders %}
+                        <tr>
+                            <td><strong>#{{ o.id }}</strong> {% if o.is_emergency %}<span
+                                    class="badge badge-danger">🚨</span>{% endif %}</td>
+                            <td>
+                                <div class="font-bold text-sm">{{ o.patient_name }}</div>
+                                <div class="text-xs text-muted">{{ o.patient_phone or '–' }}</div>
+                            </td>
+                            <td class="font-bold" style="color:var(--primary)">₹{{ "%.2f"|format(o.total_amount) }}</td>
+                            <td><span class="badge badge-{{ o.status }}">{{ o.status|title }}</span></td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="empty-state" style="padding:30px">
+                <div class="empty-icon">📦</div>
+                <h3>No Orders Yet</h3>
+                <p>Orders from patients will appear here</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Low Stock Alert -->
+    <div class="card">
+        <div class="card-header">
+            <span class="card-title">⚠️ Low Stock Alert</span>
+            <a href="{{ url_for('chemist_inventory') }}" class="btn btn-ghost btn-sm">Update Stock →</a>
+        </div>
+        <div class="card-body">
+            {% if low_stock_meds %}
+            {% for med in low_stock_meds %}
+            <div
+                style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border)">
+                <div>
+                    <div class="font-bold text-sm">{{ med.name }}</div>
+                    <div class="text-xs text-muted">{{ med.category or 'Uncategorized' }}</div>
+                </div>
+                <div style="text-align:right">
+                    <span class="badge {{ 'badge-danger' if med.stock == 0 else 'badge-warning' }}">
+                        {{ med.stock }} left
+                    </span>
+                </div>
+            </div>
+            {% endfor %}
+            {% else %}
+            <div class="empty-state" style="padding:20px">
+                <div class="empty-icon">✅</div>
+                <h3>All Good!</h3>
+                <p>No low stock alerts</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Pharmacy Info Card -->
+<div class="card mt-5">
+    <div class="card-header">
+        <span class="card-title">🏪 Pharmacy Information</span>
+    </div>
+    <div class="card-body">
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:16px">
+            <div style="padding:14px;background:var(--surface2);border-radius:var(--radius)">
+                <div class="text-xs text-muted">SHOP NAME</div>
+                <div class="font-bold mt-1">{{ chemist.shop_name }}</div>
+            </div>
+            <div style="padding:14px;background:var(--surface2);border-radius:var(--radius)">
+                <div class="text-xs text-muted">LICENSE NO.</div>
+                <div class="font-bold mt-1">{{ chemist.license_no or 'Not set' }}</div>
+            </div>
+            <div style="padding:14px;background:var(--surface2);border-radius:var(--radius)">
+                <div class="text-xs text-muted">ADDRESS</div>
+                <div class="font-bold mt-1">{{ chemist.address or 'Not set' }}</div>
+            </div>
+            <div style="padding:14px;background:var(--surface2);border-radius:var(--radius)">
+                <div class="text-xs text-muted">PHONE</div>
+                <div class="font-bold mt-1">{{ chemist.phone or 'Not set' }}</div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

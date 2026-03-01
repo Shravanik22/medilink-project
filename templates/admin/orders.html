@@ -1,0 +1,85 @@
+{% extends "layout.html" %}
+{% block title %}All Orders{% endblock %}
+{% block page_title %}All Orders{% endblock %}
+{% block page_subtitle %}Platform-wide order monitoring{% endblock %}
+
+{% block content %}
+<!-- Status Filter Tabs -->
+<div style="display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap">
+    {% for status in ['all','pending','processing','ready','delivered','cancelled'] %}
+    <button onclick="filterStatus('{{ status }}')" id="af-{{ status }}"
+        class="btn btn-sm {{ 'btn-primary' if status=='all' else 'btn-outline' }} admin-filter">
+        {{ status|title if status != 'all' else '📋 All' }}
+    </button>
+    {% endfor %}
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <span class="card-title">📦 Orders</span>
+        <div style="display:flex;gap:10px">
+            <input type="text" id="adminOrderSearch" class="form-control" style="width:220px" placeholder="🔍 Search…">
+            <span class="badge badge-info">{{ orders|length }} total</span>
+        </div>
+    </div>
+    <div class="card-body" style="padding:0">
+        {% if orders %}
+        <div class="table-wrapper" style="border:none;border-radius:0">
+            <table class="sortable" id="adminOrderTable">
+                <thead>
+                    <tr>
+                        <th data-col="0">Order #</th>
+                        <th data-col="1">Patient</th>
+                        <th data-col="2">Chemist</th>
+                        <th data-col="3">Amount</th>
+                        <th>Status</th>
+                        <th data-col="5">Date</th>
+                        <th>Type</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for o in orders %}
+                    <tr data-status="{{ o.status }}">
+                        <td><strong>#{{ o.id }}</strong></td>
+                        <td>
+                            <div class="font-bold text-sm">{{ o.patient_name }}</div>
+                            <div class="text-xs text-muted">{{ o.patient_phone or '' }}</div>
+                        </td>
+                        <td class="text-sm">{{ o.shop_name }}</td>
+                        <td class="font-bold" style="color:var(--primary)">₹{{ "%.2f"|format(o.total_amount) }}</td>
+                        <td><span class="badge badge-{{ o.status }}">{{ o.status|title }}</span></td>
+                        <td class="text-sm">{{ o.created_at.strftime('%d %b %Y') }}</td>
+                        <td>
+                            {% if o.is_emergency %}
+                            <span class="badge badge-danger">🚨 Emergency</span>
+                            {% else %}
+                            <span class="badge badge-info">Regular</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <div class="empty-icon">📦</div>
+            <h3>No Orders</h3>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function filterStatus(status) {
+        document.querySelectorAll('.admin-filter').forEach(b => b.className = 'btn btn-sm btn-outline admin-filter');
+        document.getElementById('af-' + status).className = 'btn btn-sm btn-primary admin-filter';
+        document.querySelectorAll('#adminOrderTable tbody tr').forEach(row => {
+            row.style.display = (status === 'all' || row.dataset.status === status) ? '' : 'none';
+        });
+    }
+    document.addEventListener('DOMContentLoaded', () => initTableSearch('adminOrderSearch', 'adminOrderTable'));
+</script>
+{% endblock %}

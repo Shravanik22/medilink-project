@@ -1,0 +1,176 @@
+{% extends "layout.html" %}
+{% block title %}Patient Dashboard{% endblock %}
+{% block page_title %}My Dashboard{% endblock %}
+{% block page_subtitle %}Welcome back, {{ session.name }}! Here's your health overview.{% endblock %}
+{% block page_actions %}
+<a href="{{ url_for('upload_report') }}" class="btn btn-primary">
+    📤 Upload Report
+</a>
+{% endblock %}
+
+{% block content %}
+<!-- Stats -->
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-icon blue">🛒</div>
+        <div class="stat-body">
+            <div class="stat-value" data-count="{{ total_orders }}">0</div>
+            <div class="stat-label">Total Orders</div>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon green">📋</div>
+        <div class="stat-body">
+            <div class="stat-value" data-count="{{ total_prescriptions }}">0</div>
+            <div class="stat-label">Prescriptions</div>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon orange">📄</div>
+        <div class="stat-body">
+            <div class="stat-value" data-count="{{ total_reports }}">0</div>
+            <div class="stat-label">Medical Reports</div>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon purple">❤️</div>
+        <div class="stat-body">
+            <div class="stat-value">{{ "✓" if metrics else "–" }}</div>
+            <div class="stat-label">Health Metrics</div>
+        </div>
+    </div>
+</div>
+
+<div class="grid-2">
+    <!-- Health Metrics Summary -->
+    <div class="card">
+        <div class="card-header">
+            <span class="card-title">❤️ Latest Health Metrics</span>
+            <a href="{{ url_for('health_metrics') }}" class="btn btn-ghost btn-sm">View All →</a>
+        </div>
+        <div class="card-body">
+            {% if metrics %}
+            <div class="metric-cards-grid" style="grid-template-columns:repeat(3,1fr)">
+                {% if metrics.blood_pressure %}
+                <div class="metric-card">
+                    <div class="metric-icon">🩺</div>
+                    <div class="metric-value">{{ metrics.blood_pressure }}</div>
+                    <div class="metric-label">Blood Pressure</div>
+                </div>
+                {% endif %}
+                {% if metrics.sugar %}
+                <div class="metric-card">
+                    <div class="metric-icon">🍬</div>
+                    <div class="metric-value">{{ metrics.sugar }}</div>
+                    <div class="metric-label">Sugar</div>
+                </div>
+                {% endif %}
+                {% if metrics.hemoglobin %}
+                <div class="metric-card">
+                    <div class="metric-icon">🔴</div>
+                    <div class="metric-value">{{ metrics.hemoglobin }}</div>
+                    <div class="metric-label">Hemoglobin</div>
+                </div>
+                {% endif %}
+                {% if metrics.cholesterol %}
+                <div class="metric-card">
+                    <div class="metric-icon">🫀</div>
+                    <div class="metric-value">{{ metrics.cholesterol }}</div>
+                    <div class="metric-label">Cholesterol</div>
+                </div>
+                {% endif %}
+                {% if metrics.heart_rate %}
+                <div class="metric-card">
+                    <div class="metric-icon">💓</div>
+                    <div class="metric-value">{{ metrics.heart_rate }}</div>
+                    <div class="metric-label">Heart Rate</div>
+                </div>
+                {% endif %}
+                {% if metrics.weight %}
+                <div class="metric-card">
+                    <div class="metric-icon">⚖️</div>
+                    <div class="metric-value">{{ metrics.weight }}</div>
+                    <div class="metric-label">Weight</div>
+                </div>
+                {% endif %}
+            </div>
+            <p class="text-xs text-muted mt-3">Last updated: {{ metrics.recorded_at.strftime('%d %b %Y, %I:%M %p') if
+                metrics.recorded_at else '–' }}</p>
+            {% else %}
+            <div class="empty-state" style="padding:30px 16px">
+                <div class="empty-icon">🧬</div>
+                <h3>No Health Data</h3>
+                <p>Upload a medical report to auto-extract your health metrics.</p>
+                <a href="{{ url_for('upload_report') }}" class="btn btn-primary mt-3">Upload Report</a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Recent Orders -->
+    <div class="card">
+        <div class="card-header">
+            <span class="card-title">🛒 Recent Orders</span>
+            <a href="{{ url_for('patient_orders') }}" class="btn btn-ghost btn-sm">View All →</a>
+        </div>
+        <div class="card-body" style="padding:0">
+            {% if recent_orders %}
+            <div class="table-wrapper" style="border:none;border-radius:0">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Order</th>
+                            <th>Chemist</th>
+                            <th>Amount</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for o in recent_orders %}
+                        <tr>
+                            <td>#{{ o.id }}</td>
+                            <td>{{ o.shop_name }}</td>
+                            <td>₹{{ "%.2f"|format(o.total_amount) }}</td>
+                            <td>
+                                <span class="badge badge-{{ o.status }}">
+                                    {% if o.status == 'pending' %}⏳
+                                    {% elif o.status == 'processing' %}🔄
+                                    {% elif o.status == 'ready' %}✅
+                                    {% elif o.status == 'delivered' %}📦
+                                    {% else %}❌{% endif %}
+                                    {{ o.status|title }}
+                                </span>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="empty-state" style="padding:30px 16px">
+                <div class="empty-icon">🛒</div>
+                <h3>No Orders Yet</h3>
+                <p>Browse medicines and place your first order.</p>
+                <a href="{{ url_for('patient_orders') }}" class="btn btn-accent mt-3">Order Now</a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="card mt-5">
+    <div class="card-header">
+        <span class="card-title">⚡ Quick Actions</span>
+    </div>
+    <div class="card-body">
+        <div style="display:flex;gap:14px;flex-wrap:wrap">
+            <a href="{{ url_for('upload_prescription') }}" class="btn btn-outline">📋 Upload Prescription</a>
+            <a href="{{ url_for('upload_report') }}" class="btn btn-outline">📄 Upload Medical Report</a>
+            <a href="{{ url_for('search_medicines') }}" class="btn btn-outline">🔍 Search Medicines</a>
+            <a href="{{ url_for('chemists_map') }}" class="btn btn-outline">🗺️ Find Chemists</a>
+            <a href="{{ url_for('patient_orders') }}" class="btn btn-outline">🛒 Place Order</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

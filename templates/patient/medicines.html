@@ -1,0 +1,271 @@
+{% extends "layout.html" %}
+{% block title %}Search Medicines{% endblock %}
+{% block page_title %}Browse Medicines{% endblock %}
+{% block page_subtitle %}Search across all registered pharmacies{% endblock %}
+
+{% block content %}
+<!-- Search Bar -->
+<div class="card mb-5">
+    <div class="card-body">
+        <form method="GET" style="display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap">
+            <div class="form-group" style="flex:1;min-width:220px;margin:0">
+                <label class="form-label">Search</label>
+                <input type="text" name="q" class="form-control"
+                    placeholder="🔍 Search by name, generic name, category…" value="{{ query }}">
+            </div>
+            <div class="form-group" style="min-width:180px;margin:0">
+                <label class="form-label">Category</label>
+                <select name="cat" class="form-control">
+                    <option value="">All Categories</option>
+                    {% for cat in categories %}
+                    <option value="{{ cat }}" {{ 'selected' if selected_cat==cat }}>{{ cat }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <button type="submit" class="btn btn-primary">🔍 Search</button>
+            {% if query or selected_cat %}
+            <a href="{{ url_for('search_medicines') }}" class="btn btn-outline">✕ Clear</a>
+            {% endif %}
+        </form>
+    </div>
+</div>
+
+<!-- Results -->
+{% if medicines %}
+<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+    <p class="text-muted text-sm">Found <strong>{{ medicines|length }}</strong> medicines</p>
+</div>
+<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:18px">
+    {% for med in medicines %}
+    <div class="medicine-card">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">
+            <div>
+                <div class="med-name">{{ med.name }}</div>
+                <div class="med-generic">{{ med.generic_name or '' }}</div>
+            </div>
+            {% if med.category %}
+            <span class="badge badge-info" style="font-size:11px">{{ med.category }}</span>
+            {% endif %}
+        </div>
+
+        <div style="display:flex;align-items:center;gap:16px;margin-bottom:10px">
+            <span class="med-price">₹{{ "%.2f"|format(med.price) }}</span>
+            <span style="font-size:12px;color:var(--text-muted)">per {{ med.unit }}</span>
+        </div>
+
+        <div class="med-stock">
+            📦 {{ med.stock }} in stock
+            <span
+                class="badge {{ 'badge-success' if med.stock > 5 else ('badge-warning' if med.stock > 0 else 'badge-danger') }}"
+                style="margin-left:6px">
+                {{ 'Available' if med.stock > 5 else ('Low Stock' if med.stock > 0 else 'Out of Stock') }}
+            </span>
+        </div>
+        <div class="stock-bar">
+            <div class="stock-bar-fill" data-stock="{{ med.stock }}"></div>
+        </div>
+
+        <div class="mt-3 text-xs text-muted">🏪 {{ med.shop_name }}</div>
+        {% if med.chemist_address %}
+        <div class="text-xs text-muted">📍 {{ med.chemist_address[:60] }}</div>
+        {% endif %}
+        {% if med.expiry_date %}
+        <div style="margin-top:6px">
+            <span class="badge expiry-badge" data-expiry="{{ med.expiry_date }}">
+                📅 Exp: {{ med.expiry_date.strftime('%b %Y') }}
+            </span>
+        </div>
+        {% endif %}
+
+        <div class="med-actions">
+            <button data-med-id="{{ med.id }}" data-med-name="{{ med.name|e }}" data-med-price="{{ med.price }}"
+                data-med-chemist="{{ med.chemist_id }}" onclick="addToCartFromBtn(this)" class="btn btn-primary btn-sm"
+                style="flex:1" {{ 'disabled' if med.stock==0 }}>
+                🛒 Add to Cart
+            </button>
+            <button data-med-id="{{ med.id }}" onclick="showMedDetail(this.dataset.medId)"
+                class="btn btn-outline btn-sm btn-icon">👁</button>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<div class="card">
+    <div class="card-body">
+        <div class="empty-state">
+            <div class="empty-icon">💊</div>
+            <h3>No Medicines Found</h3>
+            <p>Try a different search term or check back later.</p>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Cart Floating Button -->
+<div id="cartFloat" style="display:none;position:fixed;bottom:30px;right:30px;z-index:100">
+    <button onclick="Modal.open('cartModal')" class="btn btn-accent btn-lg"
+        style="border-radius:99px;box-shadow:0 8px 24px rgba(16,185,129,.4)">
+        🛒 Cart (<span id="cartCount">0</span>) — ₹<span id="cartTotal">0.00</span>
+    </button>
+</div>
+
+<!-- Cart Modal -->
+<div class="modal-overlay" id="cartModal">
+    <div class="modal modal-lg">
+        <div class="modal-header">
+            <h3>🛒 Your Cart</h3>
+            <button class="modal-close" onclick="Modal.close('cartModal')">×</button>
+        </div>
+        <div class="modal-body">
+            <div id="cartItems"></div>
+            <div class="form-group mt-4">
+                <label class="form-label">Select Chemist</label>
+                <select id="cartChemist" class="form-control">
+                    <option value="">— Auto (from cart) —</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Prescription (optional)</label>
+                <select id="cartPresc" class="form-control">
+                    <option value="">— No prescription —</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Notes</label>
+                <textarea id="cartNotes" class="form-control" rows="2" placeholder="Delivery instructions…"></textarea>
+            </div>
+            <label style="display:flex;align-items:center;gap:8px;cursor:pointer;margin-top:8px">
+                <input type="checkbox" id="cartEmergency"> <span class="text-sm font-bold"
+                    style="color:var(--danger)">🚨 Emergency Order (Priority Processing)</span>
+            </label>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-outline" onclick="Modal.close('cartModal')">Cancel</button>
+            <button class="btn btn-accent" onclick="placeOrder()" id="placeBtn">✅ Place Order</button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    let cart = {};        // { medicine_id: {name, price, qty, chemist_id} }
+    let prescriptions = []; // from /api/prescriptions
+
+    // Called via data-* attributes to avoid Jinja inside onclick
+    function addToCartFromBtn(btn) {
+        const id = btn.dataset.medId;
+        const name = btn.dataset.medName;
+        const price = parseFloat(btn.dataset.medPrice);
+        const chemistId = parseInt(btn.dataset.medChemist);
+        addToCart(id, name, price, chemistId);
+    }
+
+    function addToCart(id, name, price, chemist_id) {
+        if (!cart[id]) cart[id] = { id, name, price, qty: 0, chemist_id };
+        cart[id].qty++;
+        updateCartUI();
+        Toast.success(`${name} added to cart!`);
+    }
+
+    function updateCartUI() {
+        const keys = Object.keys(cart);
+        const count = keys.reduce((s, k) => s + cart[k].qty, 0);
+        const total = keys.reduce((s, k) => s + cart[k].price * cart[k].qty, 0);
+        document.getElementById('cartCount').textContent = count;
+        document.getElementById('cartTotal').textContent = total.toFixed(2);
+        document.getElementById('cartFloat').style.display = count > 0 ? 'block' : 'none';
+
+        // Render cart items
+        const div = document.getElementById('cartItems');
+        if (!keys.length) { div.innerHTML = '<p class="text-muted text-center">Cart is empty</p>'; return; }
+        div.innerHTML = `
+    <div class="table-wrapper">
+    <table>
+      <thead><tr><th>Medicine</th><th>Price</th><th>Qty</th><th>Subtotal</th><th></th></tr></thead>
+      <tbody>
+      ${keys.map(k => {
+            const item = cart[k];
+            return `<tr>
+          <td>${item.name}</td>
+          <td>₹${item.price.toFixed(2)}</td>
+          <td>
+            <button onclick="changeQty(${k},-1)" class="btn btn-ghost btn-sm">−</button>
+            <strong>${item.qty}</strong>
+            <button onclick="changeQty(${k},1)" class="btn btn-ghost btn-sm">+</button>
+          </td>
+          <td>₹${(item.price * item.qty).toFixed(2)}</td>
+          <td><button onclick="removeItem(${k})" class="btn btn-danger btn-sm">✕</button></td>
+        </tr>`;
+        }).join('')}
+      <tr><td colspan="3" class="text-right font-bold" style="text-align:right">Total:</td>
+          <td class="font-bold" style="color:var(--accent)">₹${total.toFixed(2)}</td><td></td></tr>
+      </tbody>
+    </table></div>`;
+
+        // Set chemist options
+        const chemistIds = [...new Set(keys.map(k => cart[k].chemist_id))];
+        const sel = document.getElementById('cartChemist');
+        sel.innerHTML = chemistIds.map(id => `<option value="${id}">Chemist #${id}</option>`).join('');
+    }
+
+    function changeQty(id, delta) {
+        cart[id].qty += delta;
+        if (cart[id].qty <= 0) delete cart[id];
+        updateCartUI();
+    }
+    function removeItem(id) { delete cart[id]; updateCartUI(); }
+
+    async function placeOrder() {
+        const keys = Object.keys(cart);
+        if (!keys.length) { Toast.error('Cart is empty!'); return; }
+        const chemist_id = parseInt(document.getElementById('cartChemist').value);
+        if (!chemist_id) { Toast.error('Please select a chemist'); return; }
+        const payload = {
+            chemist_id,
+            items: keys.map(k => ({ medicine_id: parseInt(k), quantity: cart[k].qty })),
+            prescription_id: document.getElementById('cartPresc').value || null,
+            notes: document.getElementById('cartNotes').value,
+            is_emergency: document.getElementById('cartEmergency').checked ? 1 : 0
+        };
+        const btn = document.getElementById('placeBtn');
+        btn.innerHTML = '<span class="spinner"></span> Placing…'; btn.disabled = true;
+        const data = await postJSON('{{ url_for("patient_orders") }}', payload);
+        btn.innerHTML = '✅ Place Order'; btn.disabled = false;
+        if (data.success) {
+            Toast.success(data.message);
+            cart = {};
+            updateCartUI();
+            Modal.close('cartModal');
+        } else {
+            Toast.error(data.message);
+        }
+    }
+
+    function showMedDetail(id) { Toast.info('View medicine #' + id); }
+
+    // Apply stock-bar fill colours from data-stock attribute
+    document.querySelectorAll('.stock-bar-fill[data-stock]').forEach(el => {
+        const s = parseInt(el.dataset.stock);
+        el.style.width = Math.min(s * 5, 100) + '%';
+        el.classList.add(s > 10 ? 'stock-high' : (s > 3 ? 'stock-mid' : 'stock-low'));
+    });
+
+    // Color-code expiry badges
+    const _today = new Date(); _today.setHours(0, 0, 0, 0);
+    document.querySelectorAll('.expiry-badge[data-expiry]').forEach(el => {
+        const exp = new Date(el.dataset.expiry);
+        const diff = Math.floor((exp - _today) / 86400000);
+        if (diff < 0) {
+            el.classList.add('badge-danger');
+            el.title = 'This medicine has EXPIRED';
+        } else if (diff <= 30) {
+            el.classList.add('badge-warning');
+            el.title = `Expires in ${diff} day(s) — check with chemist`;
+        } else {
+            el.classList.add('badge-success');
+            el.title = `Valid for ${diff} more days`;
+        }
+    });
+</script>
+{% endblock %}
