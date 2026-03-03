@@ -2,18 +2,23 @@ services:
   - type: web
     name: medilink
     env: python
+    region: singapore   # closest free-tier region to India
+    plan: free
     buildCommand: pip install -r requirements.txt
-    startCommand: gunicorn app:app
+    startCommand: gunicorn app:app --bind 0.0.0.0:$PORT --workers 2 --timeout 120 --log-level info --access-logfile - --error-logfile -
+    healthCheckPath: /health
     envVars:
       - key: SECRET_KEY
-        generateValue: true
+        generateValue: true          # Render auto-generates a secure random value
       - key: DB_HOST
-        value: YOUR_MYSQL_HOST
+        sync: false                  # Set manually in Render dashboard
       - key: DB_USER
-        value: YOUR_MYSQL_USER
+        sync: false                  # Set manually in Render dashboard
       - key: DB_PASSWORD
-        value: YOUR_MYSQL_PASSWORD
+        sync: false                  # Set manually in Render dashboard
       - key: DB_NAME
         value: medilink
       - key: FLASK_DEBUG
         value: "false"
+      - key: PYTHON_VERSION
+        value: "3.11.0"

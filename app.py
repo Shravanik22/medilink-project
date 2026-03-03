@@ -1,6 +1,8 @@
 import os
 import re
 import json
+import logging
+import time
 from datetime import datetime
 from functools import wraps
 from flask import (Flask, render_template, request, redirect, url_for,
@@ -15,6 +17,13 @@ try:
     load_dotenv()
 except ImportError:
     pass  # python-dotenv not installed — use real environment variables
+
+# ─── Logging ─────────────────────────────────────────────────────────────────
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s [%(levelname)s] %(name)s: %(message)s',
+    datefmt='%Y-%m-%d %H:%M:%S'
+)
 
 # ─── Optional imports ────────────────────────────────────────────────────────
 try:
@@ -47,6 +56,14 @@ app.config['UPLOAD_FOLDER'] = os.environ.get(
     'UPLOAD_FOLDER', os.path.join(os.path.dirname(__file__), 'uploads'))
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16 MB
 
+# ─── Session / Cookie security (required for HTTPS on Render) ─────────────────
+_is_production = os.environ.get('FLASK_DEBUG', 'false').lower() != 'true'
+app.config['SESSION_COOKIE_SECURE']   = _is_production   # HTTPS-only cookies
+app.config['SESSION_COOKIE_HTTPONLY'] = True              # block JS access
+app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'            # CSRF protection
+app.config['SESSION_COOKIE_NAME']     = 'medilink_session'
+app.config['PERMANENT_SESSION_LIFETIME'] = 86400 * 7     # 7-day sessions
+
 ALLOWED_EXTENSIONS = {'pdf', 'png', 'jpg', 'jpeg', 'gif'}
 
 # ─── DB Config (env vars with sensible local defaults) ───────────────────────
@@ -58,28 +75,47 @@ DB_CONFIG = {
     'charset':  'utf8mb4',
     'cursorclass': pymysql.cursors.DictCursor,
     'connect_timeout': 10,
+    'autocommit': False,
 }
 
-def get_db():
-    return pymysql.connect(**DB_CONFIG)
+def get_db(retries: int = 3, delay: float = 1.5):
+    """Return a PyMySQL connection.  Retries on transient failures."""
+    last_err = None
+    for attempt in range(1, retries + 1):
+        try:
+            return pymysql.connect(**DB_CONFIG)
+        except Exception as e:
+            last_err = e
+            if attempt < retries:
+                app.logger.warning('DB connect attempt %d/%d failed: %s — retrying in %.1fs',
+                                   attempt, retries, e, delay)
+                time.sleep(delay)
+    app.logger.error('DB connection failed after %d attempts: %s', retries, last_err)
+    raise last_err
 
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 # ─── Init DB ─────────────────────────────────────────────────────────────────
 def init_db():
+    """Create tables and seed admin account.  Safe to call multiple times."""
     db_name = DB_CONFIG['database']
     try:
-        base = pymysql.connect(host=DB_CONFIG['host'], user=DB_CONFIG['user'],
-                               password=DB_CONFIG['password'],
-                               charset='utf8mb4',
-                               cursorclass=pymysql.cursors.DictCursor)
-        with base.cursor() as c:
-            c.execute(
-                f"CREATE DATABASE IF NOT EXISTS `{db_name}` CHARACTER SET utf8mb4"
-            )
-        base.commit()
-        base.close()
+        # Create database if it does not exist (cloud DBs usually pre-create it)
+        base_cfg = {k: v for k, v in DB_CONFIG.items()
+                    if k not in ('database', 'autocommit')}
+        base_cfg['cursorclass'] = pymysql.cursors.DictCursor
+        try:
+            base = pymysql.connect(**base_cfg)
+            with base.cursor() as c:
+                c.execute(
+                    f"CREATE DATABASE IF NOT EXISTS `{db_name}` CHARACTER SET utf8mb4"
+                )
+            base.commit()
+            base.close()
+        except Exception as e:
+            # Cloud MySQL plans usually don't allow CREATE DATABASE; DB already exists
+            app.logger.info('CREATE DATABASE skipped (likely cloud-managed): %s', e)
 
         conn = get_db()
         with conn.cursor() as c:
@@ -198,6 +234,8 @@ def init_db():
         app.logger.info('Database initialized successfully')
     except Exception as e:
         app.logger.error('DB init error: %s', e)
+        # Do NOT re-raise — let the app start; requests will fail gracefully
+        # rather than crashing all gunicorn workers on startup
 
 # ─── Decorators ──────────────────────────────────────────────────────────────
 def login_required(f):
@@ -892,12 +930,35 @@ def api_medicines():
 def serve_upload(filename):
     return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
 
+# ─── Health-check endpoint (required by Render) ───────────────────────────────
+@app.route('/health')
+def health_check():
+    """Lightweight probe — also tests DB connectivity."""
+    try:
+        conn = get_db(retries=1, delay=0)
+        conn.close()
+        db_ok = True
+    except Exception:
+        db_ok = False
+    status = 200 if db_ok else 503
+    return jsonify({
+        'status': 'ok' if db_ok else 'db_unavailable',
+        'db': db_ok,
+        'ocr': OCR_SUPPORT,
+        'pdf': PDF_SUPPORT,
+    }), status
+
 # ─── Startup ─────────────────────────────────────────────────────────────────
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
-init_db()
-app.logger.info('MediLink starting — OCR_SUPPORT=%s  PDF_SUPPORT=%s', OCR_SUPPORT, PDF_SUPPORT)
+# Run init_db in a deferred way so gunicorn workers start successfully even
+# if the DB is momentarily unreachable (e.g. first-deploy cold start).
+try:
+    init_db()
+except Exception as _init_err:  # pragma: no cover
+    app.logger.error('init_db raised unexpectedly: %s', _init_err)
+app.logger.info('MediLink ready — OCR_SUPPORT=%s  PDF_SUPPORT=%s', OCR_SUPPORT, PDF_SUPPORT)
 
-# ─── Main ─────────────────────────────────────────────────────────────────────
+# ─── Main (local dev only) ────────────────────────────────────────────────────
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
     debug = os.environ.get('FLASK_DEBUG', 'false').lower() == 'true'
