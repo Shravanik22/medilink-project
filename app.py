@@ -67,6 +67,7 @@ app.config['PERMANENT_SESSION_LIFETIME'] = 86400 * 7     # 7-day sessions
 ALLOWED_EXTENSIONS = {'pdf', 'png', 'jpg', 'jpeg', 'gif'}
 
 # ─── DB Config (env vars with sensible local defaults) ───────────────────────
+_use_ssl = os.environ.get('DB_SSL', 'false').lower() == 'true'
 DB_CONFIG = {
     'host':     os.environ.get('DB_HOST',     'localhost'),
     'user':     os.environ.get('DB_USER',     'root'),
@@ -76,6 +77,9 @@ DB_CONFIG = {
     'cursorclass': pymysql.cursors.DictCursor,
     'connect_timeout': 10,
     'autocommit': False,
+    # DB_SSL=true is required for Aiven and other cloud providers that enforce SSL.
+    # Leave unset (or false) for local MySQL without SSL configured.
+    **({'ssl': {'ssl_disabled': False}} if _use_ssl else {}),
 }
 
 def get_db(retries: int = 3, delay: float = 1.5):
