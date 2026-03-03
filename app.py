@@ -70,6 +70,7 @@ ALLOWED_EXTENSIONS = {'pdf', 'png', 'jpg', 'jpeg', 'gif'}
 _use_ssl = os.environ.get('DB_SSL', 'false').lower() == 'true'
 DB_CONFIG = {
     'host':     os.environ.get('DB_HOST',     'localhost'),
+    'port':     int(os.environ.get('DB_PORT',  '3306')),   # Aiven uses 27496
     'user':     os.environ.get('DB_USER',     'root'),
     'password': os.environ.get('DB_PASSWORD', ''),
     'database': os.environ.get('DB_NAME',     'medilink'),
