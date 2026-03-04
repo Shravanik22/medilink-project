@@ -83,7 +83,7 @@ def _get_env_clean(key, default=''):
 
 _db_host = _get_env_clean('DB_HOST', 'localhost')
 _use_ssl = any(s in _db_host for s in (
-    'aivencloud.com', 'tidbcloud.com', 'planetscale.com', 'neon.tech'))
+    'aivencloud.com', 'tidbcloud.com', 'planetscale.com', 'neon.tech', 'db4free.net'))
 
 DB_CONFIG = {
     'host':     _db_host,
