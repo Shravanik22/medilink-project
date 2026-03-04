@@ -73,21 +73,13 @@ app.config['PERMANENT_SESSION_LIFETIME'] = 86400 * 7     # 7-day sessions
 
 ALLOWED_EXTENSIONS = {'pdf', 'png', 'jpg', 'jpeg', 'gif'}
 
-# ─── DB Config (env vars with sensible local defaults) ───────────────────────
-# SSL auto-detection — no DB_SSL variable needed:
-#   Railway internal MySQL → no SSL (detected automatically)
-#   Aiven / TiDB Cloud     → SSL enabled (detected from hostname)
-#   Manual override        → set DB_SSL=true or DB_SSL=false in env vars
+# ─── DB Config ────────────────────────────────────────────────────────────────
+# SSL is auto-detected purely from the hostname — no environment variable needed.
+# Railway internal MySQL  → no SSL  (hostname has no cloud-SSL domain)
+# Aiven / TiDB / Neon     → SSL on  (hostname matches known cloud domains)
 _db_host = os.environ.get('DB_HOST', 'localhost')
-_ssl_env  = os.environ.get('DB_SSL', '').lower()   # optional override
-if _ssl_env == 'true':
-    _use_ssl = True
-elif _ssl_env == 'false':
-    _use_ssl = False
-else:
-    # Auto-detect based on known cloud providers that enforce SSL
-    _use_ssl = any(s in _db_host for s in (
-        'aivencloud.com', 'tidbcloud.com', 'planetscale.com', 'neon.tech'))
+_use_ssl = any(s in _db_host for s in (
+    'aivencloud.com', 'tidbcloud.com', 'planetscale.com', 'neon.tech'))
 
 DB_CONFIG = {
     'host':     _db_host,
