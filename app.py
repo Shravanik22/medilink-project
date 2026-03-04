@@ -77,16 +77,20 @@ ALLOWED_EXTENSIONS = {'pdf', 'png', 'jpg', 'jpeg', 'gif'}
 # SSL is auto-detected purely from the hostname — no environment variable needed.
 # Railway internal MySQL  → no SSL  (hostname has no cloud-SSL domain)
 # Aiven / TiDB / Neon     → SSL on  (hostname matches known cloud domains)
-_db_host = os.environ.get('DB_HOST', 'localhost')
+def _get_env_clean(key, default=''):
+    val = os.environ.get(key, default)
+    return str(val).strip().strip('"').strip("'")
+
+_db_host = _get_env_clean('DB_HOST', 'localhost')
 _use_ssl = any(s in _db_host for s in (
     'aivencloud.com', 'tidbcloud.com', 'planetscale.com', 'neon.tech'))
 
 DB_CONFIG = {
     'host':     _db_host,
-    'port':     int((os.environ.get('DB_PORT', '') or '3306').strip() or '3306'),
-    'user':     os.environ.get('DB_USER',     'root'),
-    'password': os.environ.get('DB_PASSWORD', ''),
-    'database': os.environ.get('DB_NAME',     'medilink'),
+    'port':     int(_get_env_clean('DB_PORT', '3306') or '3306'),
+    'user':     _get_env_clean('DB_USER', 'root'),
+    'password': _get_env_clean('DB_PASSWORD', ''),
+    'database': _get_env_clean('DB_NAME', 'medilink'),
     'charset':  'utf8mb4',
     'cursorclass': pymysql.cursors.DictCursor,
     'connect_timeout': 10,
