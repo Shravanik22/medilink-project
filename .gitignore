@@ -1,0 +1,40 @@
+# ─── Python ───────────────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*.pyc
+*.pyo
+*.pyd
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# ─── Virtual environments ─────────────────────────────────────────────────────
+venv/
+env/
+.env
+.venv/
+ENV/
+
+# ─── Secrets / credentials ────────────────────────────────────────────────────
+.env
+*.env
+secrets.json
+
+# ─── Uploads (runtime files — not tracked in git) ────────────────────────────
+uploads/
+!uploads/.gitkeep
+
+# ─── OS / editor junk ─────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+.vscode/
+.idea/
+
+# ─── Logs ─────────────────────────────────────────────────────────────────────
+*.log
+logs/

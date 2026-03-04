@@ -42,18 +42,25 @@ try:
         pytesseract.pytesseract.tesseract_cmd = _tess_env
     elif os.path.exists(_tess_win):
         pytesseract.pytesseract.tesseract_cmd = _tess_win
-    # else — rely on system PATH (Linux/Render)
-    # Verify the binary is actually runnable (not just path-detectable)
+    # else — rely on system PATH (Linux/Railway/Render)
+    # Verify the binary is actually runnable before declaring support
     pytesseract.get_tesseract_version()  # raises if binary missing or broken
     OCR_SUPPORT = True
 except Exception:
+    # OCR is optional — app works fully without Tesseract.
+    # On Railway/Render free tier, Tesseract is not installed by default.
+    # Reports can still be uploaded; health metrics just won't be auto-extracted.
     OCR_SUPPORT = False
+    Image = None  # prevent NameError if referenced elsewhere
 
 # ─── App Config ──────────────────────────────────────────────────────────────
 app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY', 'medilink_secret_2024_xK9mN2pQ_changeme')
-app.config['UPLOAD_FOLDER'] = os.environ.get(
-    'UPLOAD_FOLDER', os.path.join(os.path.dirname(__file__), 'uploads'))
+# Upload folder — prefer env var, then ./uploads/, then /tmp/medilink_uploads
+# Railway (and Render) have ephemeral filesystems: uploads are lost on redeploy.
+# For persistent file storage use Cloudinary / S3 / Railway Volume.
+_default_upload = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'uploads')
+app.config['UPLOAD_FOLDER'] = os.environ.get('UPLOAD_FOLDER', _default_upload)
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16 MB
 
 # ─── Session / Cookie security (required for HTTPS on Render) ─────────────────
@@ -954,17 +961,35 @@ def health_check():
     }), status
 
 # ─── Startup ─────────────────────────────────────────────────────────────────
-os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+# Create uploads folder safely — fall back to /tmp if the primary path fails
+try:
+    os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+except OSError:
+    _tmp_uploads = '/tmp/medilink_uploads'
+    os.makedirs(_tmp_uploads, exist_ok=True)
+    app.config['UPLOAD_FOLDER'] = _tmp_uploads
+    app.logger.warning('Could not create UPLOAD_FOLDER; falling back to %s', _tmp_uploads)
+
 # Run init_db in a deferred way so gunicorn workers start successfully even
-# if the DB is momentarily unreachable (e.g. first-deploy cold start).
+# if the DB is momentarily unreachable (e.g. first cold-start on Railway/Render).
 try:
     init_db()
 except Exception as _init_err:  # pragma: no cover
     app.logger.error('init_db raised unexpectedly: %s', _init_err)
-app.logger.info('MediLink ready — OCR_SUPPORT=%s  PDF_SUPPORT=%s', OCR_SUPPORT, PDF_SUPPORT)
 
-# ─── Main (local dev only) ────────────────────────────────────────────────────
+app.logger.info(
+    'MediLink ready — OCR_SUPPORT=%s  PDF_SUPPORT=%s  UPLOAD_FOLDER=%s',
+    OCR_SUPPORT, PDF_SUPPORT, app.config['UPLOAD_FOLDER']
+)
+
+# ─── Main (local dev only — gunicorn is used in production) ──────────────────
 if __name__ == '__main__':
-    port = int(os.environ.get('PORT', 5000))
-    debug = os.environ.get('FLASK_DEBUG', 'false').lower() == 'true'
-    app.run(host='0.0.0.0', port=port, debug=debug)
+    # PORT=10000 is Railway's default; Render sets PORT automatically.
+    # debug is always False in production regardless of env var.
+    _port  = int(os.environ.get('PORT', 10000))
+    _debug = os.environ.get('FLASK_DEBUG', 'false').lower() == 'true'
+    # Safety guard: never run with debug=True when PORT env var is set
+    # (which means we are running inside a cloud platform, not locally).
+    if 'PORT' in os.environ:
+        _debug = False
+    app.run(host='0.0.0.0', port=_port, debug=_debug)
