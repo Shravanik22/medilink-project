@@ -259,23 +259,16 @@ def init_db():
 
 @app.context_processor
 def inject_user():
-    role = None
-    if request.path.startswith('/patient') and 'patient_id' in session:
-        role = 'patient'
-    elif request.path.startswith('/chemist') and 'chemist_id' in session:
-        role = 'chemist'
-    elif request.path.startswith('/admin') and 'admin_id' in session:
-        role = 'admin'
-    
+    role = session.get('role')
     if role:
-        return {'active_role': role, 'active_name': session.get(f'{role}_name'), 'active_email': session.get(f'{role}_email')}
+        return {'active_role': role, 'active_name': session.get('user_name'), 'active_email': session.get('user_email')}
     return {}
 
 # ─── Decorators ──────────────────────────────────────────────────────────────
 def login_required(f):
     @wraps(f)
     def decorated(*args, **kwargs):
-        if not any(k in session for k in ['patient_id', 'chemist_id', 'admin_id']):
+        if 'user_id' not in session:
             flash('Please login to continue.', 'error')
             return redirect(url_for('login'))
         return f(*args, **kwargs)
@@ -285,12 +278,7 @@ def role_required(*roles):
     def decorator(f):
         @wraps(f)
         def decorated(*args, **kwargs):
-            role_found = False
-            for role in roles:
-                if f'{role}_id' in session:
-                    role_found = True
-                    break
-            if not role_found:
+            if session.get('role') not in roles:
                 flash('Access denied.', 'error')
                 return redirect(url_for('dashboard'))
             return f(*args, **kwargs)
@@ -374,7 +362,7 @@ def parse_health_metrics(text):
 
 @app.route('/')
 def index():
-    if any(k in session for k in ['patient_id', 'chemist_id', 'admin_id']):
+    if 'user_id' in session:
         return redirect(url_for('dashboard'))
     return render_template('index.html')
 
@@ -428,11 +416,11 @@ def login():
                 c.execute("SELECT * FROM users WHERE email=%s", (email,))
                 user = c.fetchone()
             if user and check_password_hash(user['password'], pw):
-                r = user['role']
-                session[f'{r}_id'] = user['id']
-                session[f'{r}_name'] = user['name']
-                session[f'{r}_email'] = user['email']
-                # Don't set a generic role, as they can have multiple.
+                session.clear()
+                session['user_id'] = user['id']
+                session['role'] = user['role']
+                session['user_name'] = user['name']
+                session['user_email'] = user['email']
                 return jsonify({'success': True, 'redirect': url_for('dashboard')})
             return jsonify({'success': False, 'message': 'Invalid email or password'}), 401
         finally:
@@ -441,13 +429,7 @@ def login():
 
 @app.route('/logout')
 def logout():
-    role = request.args.get('role')
-    if role and f'{role}_id' in session:
-        session.pop(f'{role}_id', None)
-        session.pop(f'{role}_name', None)
-        session.pop(f'{role}_email', None)
-    else:
-        session.clear() # fallback clears everything
+    session.clear()
     return redirect(url_for('index'))
 
 @app.route('/dashboard')
@@ -465,7 +447,7 @@ def dashboard():
 @login_required
 @role_required('patient')
 def patient_dashboard():
-    uid = session['patient_id']
+    uid = session['user_id']
     conn = get_db()
     try:
         with conn.cursor() as c:
@@ -499,7 +481,7 @@ def upload_prescription():
         if not file or not allowed_file(file.filename):
             return jsonify({'success': False, 'message': 'Invalid file type'}), 400
         fname = secure_filename(file.filename)
-        uid   = session['patient_id']
+        uid   = session['user_id']
         ts    = datetime.now().strftime('%Y%m%d%H%M%S')
         fname = f"presc_{uid}_{ts}_{fname}"
         fpath = os.path.join(app.config['UPLOAD_FOLDER'], fname)
@@ -517,7 +499,7 @@ def upload_prescription():
     conn = get_db()
     try:
         with conn.cursor() as c:
-            c.execute("SELECT * FROM prescriptions WHERE patient_id=%s ORDER BY uploaded_at DESC", (session['patient_id'],))
+            c.execute("SELECT * FROM prescriptions WHERE patient_id=%s ORDER BY uploaded_at DESC", (session['user_id'],))
             prescriptions = c.fetchall()
     finally:
         conn.close()
@@ -534,7 +516,7 @@ def upload_report():
         if not file or not allowed_file(file.filename):
             return jsonify({'success': False, 'message': 'Invalid file type'}), 400
         fname = secure_filename(file.filename)
-        uid   = session['patient_id']
+        uid   = session['user_id']
         ts    = datetime.now().strftime('%Y%m%d%H%M%S')
         fname = f"report_{uid}_{ts}_{fname}"
         fpath = os.path.join(app.config['UPLOAD_FOLDER'], fname)
@@ -582,7 +564,7 @@ def upload_report():
                 hm.cholesterol, hm.heart_rate, hm.weight, hm.height
                 FROM medical_reports mr
                 LEFT JOIN health_metrics hm ON hm.report_id=mr.id
-                WHERE mr.patient_id=%s ORDER BY mr.uploaded_at DESC""", (session['patient_id'],))
+                WHERE mr.patient_id=%s ORDER BY mr.uploaded_at DESC""", (session['user_id'],))
             reports = c.fetchall()
     finally:
         conn.close()
@@ -597,7 +579,7 @@ def health_metrics():
         with conn.cursor() as c:
             c.execute("""SELECT hm.*, mr.file_name FROM health_metrics hm
                 LEFT JOIN medical_reports mr ON hm.report_id=mr.id
-                WHERE hm.patient_id=%s ORDER BY hm.recorded_at DESC""", (session['patient_id'],))
+                WHERE hm.patient_id=%s ORDER BY hm.recorded_at DESC""", (session['user_id'],))
             metrics_list = c.fetchall()
     finally:
         conn.close()
@@ -636,7 +618,7 @@ def search_medicines():
 @login_required
 @role_required('patient')
 def patient_orders():
-    uid = session['patient_id']
+    uid = session['user_id']
     if request.method == 'POST':
         data = request.get_json()
         chemist_id = data.get('chemist_id')
@@ -731,7 +713,7 @@ def chemists_map():
 @login_required
 @role_required('chemist')
 def chemist_dashboard():
-    uid = session['patient_id']
+    uid = session['user_id']
     conn = get_db()
     try:
         with conn.cursor() as c:
@@ -767,7 +749,7 @@ def chemist_dashboard():
 @login_required
 @role_required('chemist')
 def chemist_inventory():
-    uid = session['chemist_id']
+    uid = session['user_id']
     conn = get_db()
     try:
         with conn.cursor() as c:
@@ -815,7 +797,7 @@ def chemist_inventory():
 @login_required
 @role_required('chemist')
 def chemist_orders():
-    uid = session['chemist_id']
+    uid = session['user_id']
     conn = get_db()
     try:
         with conn.cursor() as c:
@@ -841,7 +823,7 @@ def update_order_status():
     data   = request.get_json()
     oid    = data.get('order_id')
     status = data.get('status')
-    uid    = session['chemist_id']
+    uid    = session['user_id']
     valid  = ['pending','processing','ready','delivered','cancelled']
     if status not in valid:
         return jsonify({'success': False, 'message': 'Invalid status'}), 400
