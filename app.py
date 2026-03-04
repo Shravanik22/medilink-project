@@ -74,10 +74,24 @@ app.config['PERMANENT_SESSION_LIFETIME'] = 86400 * 7     # 7-day sessions
 ALLOWED_EXTENSIONS = {'pdf', 'png', 'jpg', 'jpeg', 'gif'}
 
 # ─── DB Config (env vars with sensible local defaults) ───────────────────────
-_use_ssl = os.environ.get('DB_SSL', 'false').lower() == 'true'
+# SSL auto-detection — no DB_SSL variable needed:
+#   Railway internal MySQL → no SSL (detected automatically)
+#   Aiven / TiDB Cloud     → SSL enabled (detected from hostname)
+#   Manual override        → set DB_SSL=true or DB_SSL=false in env vars
+_db_host = os.environ.get('DB_HOST', 'localhost')
+_ssl_env  = os.environ.get('DB_SSL', '').lower()   # optional override
+if _ssl_env == 'true':
+    _use_ssl = True
+elif _ssl_env == 'false':
+    _use_ssl = False
+else:
+    # Auto-detect based on known cloud providers that enforce SSL
+    _use_ssl = any(s in _db_host for s in (
+        'aivencloud.com', 'tidbcloud.com', 'planetscale.com', 'neon.tech'))
+
 DB_CONFIG = {
-    'host':     os.environ.get('DB_HOST',     'localhost'),
-    'port':     int(os.environ.get('DB_PORT',  '3306')),   # Aiven uses 27496
+    'host':     _db_host,
+    'port':     int(os.environ.get('DB_PORT', '3306')),
     'user':     os.environ.get('DB_USER',     'root'),
     'password': os.environ.get('DB_PASSWORD', ''),
     'database': os.environ.get('DB_NAME',     'medilink'),
@@ -85,8 +99,6 @@ DB_CONFIG = {
     'cursorclass': pymysql.cursors.DictCursor,
     'connect_timeout': 10,
     'autocommit': False,
-    # DB_SSL=true is required for Aiven and other cloud providers that enforce SSL.
-    # Leave unset (or false) for local MySQL without SSL configured.
     **({'ssl': {'ssl_disabled': False}} if _use_ssl else {}),
 }
 
