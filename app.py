@@ -1,4 +1,5 @@
 import os
+import ssl
 import re
 import json
 import logging
@@ -85,6 +86,13 @@ _db_host = _get_env_clean('DB_HOST', 'localhost')
 _use_ssl = any(s in _db_host for s in (
     'aivencloud.com', 'tidbcloud.com', 'planetscale.com', 'neon.tech', 'db4free.net'))
 
+# Build SSL context for cloud MySQL providers (TiDB, Aiven, PlanetScale etc.)
+def _make_ssl_ctx():
+    ctx = ssl.create_default_context()
+    ctx.check_hostname = False
+    ctx.verify_mode = ssl.CERT_NONE  # encrypt without CA verification
+    return ctx
+
 DB_CONFIG = {
     'host':     _db_host,
     'port':     int(_get_env_clean('DB_PORT', '3306') or '3306'),
@@ -95,7 +103,7 @@ DB_CONFIG = {
     'cursorclass': pymysql.cursors.DictCursor,
     'connect_timeout': 10,
     'autocommit': False,
-    **({'ssl': {'ssl_disabled': False}} if _use_ssl else {}),
+    **({'ssl': _make_ssl_ctx()} if _use_ssl else {}),
 }
 
 def get_db(retries: int = 3, delay: float = 1.5):
