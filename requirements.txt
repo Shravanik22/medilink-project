@@ -2,10 +2,9 @@
 flask>=2.3.0,<3.0
 Werkzeug>=2.3.0,<3.0
 
-# ─── Database ─────────────────────────────────────────────────────────────────
+# ─── Database (PyMySQL — pure Python, no native libs needed) ──────────────────
 PyMySQL>=1.1.0
-cryptography>=41.0.0       # required by PyMySQL on Python 3.12+
-mysql-connector-python>=8.3.0  # alternative connector (Railway compatible)
+cryptography>=41.0.0
 
 # ─── Environment / config ─────────────────────────────────────────────────────
 python-dotenv>=1.0.0
@@ -13,9 +12,11 @@ python-dotenv>=1.0.0
 # ─── Production WSGI server ───────────────────────────────────────────────────
 gunicorn>=21.2.0
 
-# ─── OCR (optional — app works gracefully without Tesseract installed) ─────────
+# ─── Image handling (required for file uploads) ───────────────────────────────
 Pillow>=10.0.0
+
+# ─── OCR (optional — app works without Tesseract installed) ───────────────────
 pytesseract>=0.3.10
 
-# ─── PDF text extraction (optional — app works without it) ────────────────────
+# ─── PDF text extraction (optional) ──────────────────────────────────────────
 PyPDF2>=3.0.0
