@@ -1,157 +1,57 @@
 {% extends "layout.html" %}
 {% block title %}Nearby Chemists{% endblock %}
 {% block page_title %}Nearby Chemists{% endblock %}
-{% block page_subtitle %}Find pharmacies near you on the map{% endblock %}
-{% block extra_css %}
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-{% endblock %}
+{% block page_subtitle %}Browse registered pharmacies{% endblock %}
 
 {% block content %}
-<div class="map-card">
-    <!-- Sidebar list -->
-    <div class="map-sidebar">
-        <div style="padding:12px 0 12px;font-weight:700;font-size:14px;color:var(--text-muted)">
-            🏪 {{ chemists|length }} Pharmacies
-        </div>
-        <input type="text" id="chemistSearch" class="form-control mb-3" placeholder="🔍 Search pharmacies…"
-            oninput="filterChemists()">
-        <div id="chemistList">
-            {% for ch in chemists %}
-            <div class="chemist-list-item" id="cl-{{ ch.id }}" data-chemist-id="{{ ch.id }}"
-                onclick="focusChemist(this.dataset.chemistId)">
-                <h4>🏪 {{ ch.shop_name }}</h4>
-                <p>📍 {{ ch.address or 'Address not set' }}</p>
-                <p>📞 {{ ch.phone or 'N/A' }}</p>
-                <p style="font-size:11px;color:var(--text-light);margin-top:4px">Owner: {{ ch.owner_name }}</p>
-            </div>
-            {% endfor %}
-        </div>
+<div class="card">
+    <div class="card-header">
+        <span class="card-title">🏪 Registered Pharmacies ({{ chemists|length }})</span>
+        <input type="text" id="chemistSearch" class="form-control" style="width:220px"
+            placeholder="🔍 Search pharmacies…" oninput="filterChemists()">
     </div>
-
-    <!-- Map -->
-    <div style="flex:1">
-        <div id="map"></div>
-        <div style="margin-top:12px;font-size:12px;color:var(--text-muted)">
-            🗺️ Powered by <a href="https://www.openstreetmap.org" target="_blank">OpenStreetMap</a> +
-            <a href="https://leafletjs.com" target="_blank">Leaflet.js</a>
+    <div class="card-body" style="padding:0">
+        {% if chemists %}
+        <div class="table-wrapper" style="border:none;border-radius:0">
+            <table id="chemistTable">
+                <thead>
+                    <tr>
+                        <th>Pharmacy</th>
+                        <th>Owner</th>
+                        <th>Address</th>
+                        <th>Phone</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for ch in chemists %}
+                    <tr>
+                        <td><strong>🏪 {{ ch.shop_name }}</strong></td>
+                        <td>{{ ch.owner_name }}</td>
+                        <td>{{ ch.address or 'N/A' }}</td>
+                        <td>{{ ch.phone or 'N/A' }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
         </div>
-    </div>
-</div>
-
-<!-- Chemist Detail Modal -->
-<div class="modal-overlay" id="chemistModal">
-    <div class="modal">
-        <div class="modal-header">
-            <h3 id="chemistModalTitle">Pharmacy Details</h3>
-            <button class="modal-close" onclick="Modal.close('chemistModal')">×</button>
+        {% else %}
+        <div class="empty-state">
+            <div class="empty-icon">🏪</div>
+            <h3>No Chemists Found</h3>
+            <p>No registered pharmacies yet.</p>
         </div>
-        <div class="modal-body" id="chemistModalBody"></div>
-        <div class="modal-footer">
-            <button class="btn btn-outline" onclick="Modal.close('chemistModal')">Close</button>
-            <a href="{{ url_for('patient_orders') }}" class="btn btn-primary">🛒 Order Here</a>
-        </div>
+        {% endif %}
     </div>
 </div>
 {% endblock %}
 
 {% block extra_js %}
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script id="chemistsJsonData" type="application/json">{{ chemists_json }}</script>
 <script>
-    const chemistsData = JSON.parse(document.getElementById('chemistsJsonData').textContent);
-    const markers = {};
-
-    // Init map – center on India
-    const map = L.map('map').setView([20.5937, 78.9629], 5);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '© OpenStreetMap contributors',
-        maxZoom: 18
-    }).addTo(map);
-
-    // Custom icon
-    const pharmIcon = L.divIcon({
-        html: '<div style="background:#2563EB;color:#fff;border-radius:50%;width:36px;height:36px;display:flex;align-items:center;justify-content:center;font-size:18px;box-shadow:0 4px 12px rgba(37,99,235,.4)">💊</div>',
-        className: '', iconSize: [36, 36], iconAnchor: [18, 18]
-    });
-
-    chemistsData.forEach(ch => {
-        if (!ch.lat || !ch.lng) return;
-        const m = L.marker([ch.lat, ch.lng], { icon: pharmIcon }).addTo(map);
-        let medsHtml = ch.medicines && ch.medicines.length > 0
-            ? `<div style="font-size:11px;color:#10B981;margin:4px 0;max-height:60px;overflow-y:auto;background:#ECFDF5;padding:4px;border-radius:4px">
-                 <strong>In Stock:</strong> ${ch.medicines.slice(0, 5).join(', ')}${ch.medicines.length > 5 ? '...' : ''}
-               </div>`
-            : '<p style="font-size:11px;color:#EF4444;margin:4px 0">No distinct medicines listed</p>';
-
-        m.bindPopup(`
-    <div style="font-family:Inter,sans-serif;min-width:180px">
-      <h4 style="margin:0 0 6px;color:#1e293b">🏪 ${ch.shop_name}</h4>
-      <p style="font-size:12px;color:#64748b;margin:2px 0">📍 ${ch.address}</p>
-      <p style="font-size:12px;color:#64748b;margin:2px 0">📞 ${ch.phone}</p>
-      ${medsHtml}
-      <button onclick="showChemistDetail(${ch.id})"
-        style="margin-top:8px;background:#2563EB;color:#fff;border:none;padding:5px 12px;border-radius:6px;cursor:pointer;font-size:12px;width:100%">
-        View Details & Order
-      </button>
-    </div>`);
-        markers[ch.id] = m;
-    });
-
-    function focusChemist(id) {
-        const ch = chemistsData.find(c => c.id === id);
-        if (!ch) return;
-        map.setView([ch.lat, ch.lng], 14);
-        if (markers[id]) markers[id].openPopup();
-        document.querySelectorAll('.chemist-list-item').forEach(el => el.classList.remove('active'));
-        document.getElementById('cl-' + id)?.classList.add('active');
-    }
-
-    function showChemistDetail(id) {
-        const ch = chemistsData.find(c => c.id === id);
-        if (!ch) return;
-        document.getElementById('chemistModalTitle').textContent = '🏪 ' + ch.shop_name;
-        document.getElementById('chemistModalBody').innerHTML = `
-    <div style="display:grid;gap:12px">
-      <div style="display:flex;gap:10px;padding:12px;background:var(--surface2);border-radius:var(--radius)">
-        <span style="font-size:32px">🏪</span>
-        <div>
-          <div style="font-weight:700;font-size:16px">${ch.shop_name}</div>
-          <div style="font-size:13px;color:var(--text-muted)">Owner: ${ch.owner || 'N/A'}</div>
-        </div>
-      </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-        <div style="padding:10px;background:var(--surface2);border-radius:var(--radius-sm)">
-          <div style="font-size:11px;color:var(--text-muted)">ADDRESS</div>
-          <div style="font-size:14px;font-weight:600;margin-top:2px">📍 ${ch.address || 'N/A'}</div>
-        </div>
-        <div style="padding:10px;background:var(--surface2);border-radius:var(--radius-sm)">
-          <div style="font-size:11px;color:var(--text-muted)">PHONE</div>
-          <div style="font-size:14px;font-weight:600;margin-top:2px">📞 ${ch.phone || 'N/A'}</div>
-        </div>
-      </div>
-    </div>`;
-        Modal.open('chemistModal');
-    }
-
     function filterChemists() {
         const q = document.getElementById('chemistSearch').value.toLowerCase();
-        document.querySelectorAll('.chemist-list-item').forEach(el => {
-            el.style.display = el.textContent.toLowerCase().includes(q) ? '' : 'none';
+        document.querySelectorAll('#chemistTable tbody tr').forEach(row => {
+            row.style.display = row.textContent.toLowerCase().includes(q) ? '' : 'none';
         });
-    }
-
-    // Try to get user location
-    if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(pos => {
-            const userIcon = L.divIcon({
-                html: '<div style="background:#10B981;color:#fff;border-radius:50%;width:32px;height:32px;display:flex;align-items:center;justify-content:center;font-size:16px;box-shadow:0 4px 12px rgba(16,185,129,.4)">👤</div>',
-                className: '', iconSize: [32, 32], iconAnchor: [16, 16]
-            });
-            L.marker([pos.coords.latitude, pos.coords.longitude], { icon: userIcon })
-                .addTo(map)
-                .bindPopup('<b>📍 Your Location</b>');
-            map.setView([pos.coords.latitude, pos.coords.longitude], 12);
-        }, () => { });
     }
 </script>
 {% endblock %}

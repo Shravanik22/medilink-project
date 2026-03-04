@@ -1,78 +1,41 @@
 {% extends "layout.html" %}
 {% block title %}Orders{% endblock %}
 {% block page_title %}Order Management{% endblock %}
-{% block page_subtitle %}View and update patient orders{% endblock %}
+{% block page_subtitle %}Orders received from patients{% endblock %}
 
 {% block content %}
-<!-- Filter tabs -->
-<div style="display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap">
-    <button onclick="filterByStatus('')" class="btn btn-primary btn-sm status-filter" id="filter-all">All</button>
-    <button onclick="filterByStatus('pending')" class="btn btn-outline btn-sm status-filter" id="filter-pending">⏳
-        Pending</button>
-    <button onclick="filterByStatus('processing')" class="btn btn-outline btn-sm status-filter"
-        id="filter-processing">🔄 Processing</button>
-    <button onclick="filterByStatus('ready')" class="btn btn-outline btn-sm status-filter" id="filter-ready">✅
-        Ready</button>
-    <button onclick="filterByStatus('delivered')" class="btn btn-outline btn-sm status-filter" id="filter-delivered">📦
-        Delivered</button>
-</div>
-
 <div class="card">
     <div class="card-header">
         <span class="card-title">📦 All Orders</span>
-        <input type="text" id="ordersSearch" class="form-control" style="width:220px" placeholder="🔍 Search…">
     </div>
     <div class="card-body" style="padding:0">
         {% if orders %}
         <div class="table-wrapper" style="border:none;border-radius:0">
-            <table class="sortable" id="ordersTable">
+            <table>
                 <thead>
                     <tr>
-                        <th data-col="0">Order #</th>
-                        <th data-col="1">Patient</th>
-                        <th data-col="2">Amount</th>
+                        <th>Order #</th>
+                        <th>Patient</th>
+                        <th>Medicines</th>
+                        <th>Amount</th>
                         <th>Status</th>
-                        <th data-col="4">Date</th>
-                        <th>Update</th>
-                        <th>Details</th>
+                        <th>Date</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for o in orders %}
-                    <tr data-status="{{ o.status }}">
-                        <td>
-                            <strong>#{{ o.id }}</strong>
-                            {% if o.is_emergency %}
-                            <span class="badge badge-danger">🚨 URGENT</span>
-                            {% endif %}
-                            <div style="font-size:12px;color:var(--text-muted);margin-top:4px">{{ o.medicine_summary or
-                                'See details' }}</div>
-                        </td>
+                    <tr>
+                        <td><strong>#{{ o.id }}</strong></td>
                         <td>
                             <div class="font-bold text-sm">{{ o.patient_name }}</div>
-                            <div class="text-xs text-muted">{{ o.patient_phone or '' }} | {{ o.patient_email or '' }}
-                            </div>
+                            <div class="text-xs text-muted">{{ o.patient_phone or '' }}</div>
                         </td>
+                        <td style="font-size:12px;color:var(--text-muted)">{{ o.medicine_summary or '—' }}</td>
                         <td class="font-bold" style="color:var(--primary)">₹{{ "%.2f"|format(o.total_amount) }}</td>
                         <td>
-                            <span class="badge badge-{{ o.status }}" id="status-{{ o.id }}">
-                                {{ o.status|title }}
-                            </span>
+                            <span class="badge badge-{{ o.status }}">{{ o.status|title }}</span>
                         </td>
                         <td class="text-sm">{{ o.created_at.strftime('%d %b %Y, %H:%M') }}</td>
-                        <td>
-                            <select class="form-control" style="width:140px;padding:5px 8px;font-size:12px"
-                                data-order-id="{{ o.id }}"
-                                onchange="updateStatus(this.dataset.orderId, this.value, this)">
-                                {% for s in ['pending','processing','ready','delivered','cancelled'] %}
-                                <option value="{{ s }}" {{ 'selected' if s==o.status }}>{{ s|title }}</option>
-                                {% endfor %}
-                            </select>
-                        </td>
-                        <td>
-                            <button data-order-id="{{ o.id }}" onclick="viewItems(this.dataset.orderId)"
-                                class="btn btn-outline btn-sm">👁 Items</button>
-                        </td>
                     </tr>
                     {% endfor %}
                 </tbody>
@@ -82,91 +45,9 @@
         <div class="empty-state">
             <div class="empty-icon">📦</div>
             <h3>No Orders</h3>
-            <p>Patient orders will appear here</p>
+            <p>Patient orders will appear here.</p>
         </div>
         {% endif %}
     </div>
 </div>
-
-<!-- Order Items Modal -->
-<div class="modal-overlay" id="itemsModal">
-    <div class="modal">
-        <div class="modal-header">
-            <h3 id="itemsTitle">Order Items</h3>
-            <button class="modal-close" onclick="Modal.close('itemsModal')">×</button>
-        </div>
-        <div class="modal-body" id="itemsBody">
-            <div class="text-center"><span class="spinner dark"></span></div>
-        </div>
-    </div>
-</div>
-{% endblock %}
-
-{% block extra_js %}
-<script>
-    async function updateStatus(orderId, newStatus, selectEl) {
-        const data = await postJSON('{{ url_for("update_order_status") }}',
-            { order_id: orderId, status: newStatus });
-        if (data.success) {
-            Toast.success(data.message);
-            const badge = document.getElementById('status-' + orderId);
-            const statusMap = {
-                pending: 'badge-pending', processing: 'badge-processing',
-                ready: 'badge-ready', delivered: 'badge-delivered', cancelled: 'badge-cancelled'
-            };
-            badge.className = 'badge ' + (statusMap[newStatus] || '');
-            badge.textContent = newStatus.charAt(0).toUpperCase() + newStatus.slice(1);
-            const row = selectEl.closest('tr');
-            if (row) row.dataset.status = newStatus;
-        } else {
-            Toast.error(data.message);
-        }
-    }
-
-    async function viewItems(orderId) {
-        Modal.open('itemsModal');
-        document.getElementById('itemsTitle').textContent = 'Order #' + orderId + ' — Items';
-        document.getElementById('itemsBody').innerHTML = '<div class="text-center"><span class="spinner dark"></span></div>';
-        const res = await fetch(`/chemist/orders/${orderId}/items`);
-        const data = await res.json();
-        if (data.items?.length) {
-            let total = 0;
-            document.getElementById('itemsBody').innerHTML = `
-      <table style="width:100%;font-size:14px">
-        <thead><tr style="background:var(--surface2);text-align:left">
-          <th style="padding:8px 12px">Medicine</th>
-          <th style="padding:8px 12px">Qty</th>
-          <th style="padding:8px 12px">Price</th>
-          <th style="padding:8px 12px">Total</th>
-        </tr></thead>
-        <tbody>${data.items.map(i => {
-                total += parseFloat(i.price) * i.quantity;
-                return `<tr style="border-bottom:1px solid var(--border)">
-            <td style="padding:10px 12px;font-weight:600">${i.medicine_name}</td>
-            <td style="padding:10px 12px">${i.quantity} ${i.unit}</td>
-            <td style="padding:10px 12px">₹${parseFloat(i.price).toFixed(2)}</td>
-            <td style="padding:10px 12px;font-weight:700;color:var(--primary)">₹${(parseFloat(i.price) * i.quantity).toFixed(2)}</td>
-          </tr>`;
-            }).join('')}
-        <tr style="background:var(--surface2)">
-          <td colspan="3" style="padding:10px 12px;font-weight:700;text-align:right">Grand Total:</td>
-          <td style="padding:10px 12px;font-weight:800;color:var(--accent);font-size:16px">₹${total.toFixed(2)}</td>
-        </tr></tbody>
-      </table>`;
-        } else {
-            document.getElementById('itemsBody').innerHTML = '<p class="text-muted text-center">No items</p>';
-        }
-    }
-
-    function filterByStatus(status) {
-        document.querySelectorAll('.status-filter').forEach(b => { b.className = 'btn btn-outline btn-sm status-filter'; });
-        const activeBtn = document.getElementById('filter-' + (status || 'all'));
-        if (activeBtn) activeBtn.className = 'btn btn-primary btn-sm status-filter';
-        document.querySelectorAll('#ordersTable tbody tr').forEach(row => {
-            row.style.display = (!status || row.dataset.status === status) ? '' : 'none';
-        });
-    }
-
-    document.addEventListener('DOMContentLoaded', () => initTableSearch('ordersSearch', 'ordersTable'));
-</script>
 {% endblock %}

@@ -614,46 +614,12 @@ def search_medicines():
     return render_template('patient/medicines.html',
         medicines=medicines, categories=categories, query=query, selected_cat=category)
 
-@app.route('/patient/orders', methods=['GET','POST'])
+# ─── PATIENT ORDER HISTORY (read-only) ─────────────────────────────────────
+@app.route('/patient/orders')
 @login_required
 @role_required('patient')
 def patient_orders():
     uid = session['user_id']
-    if request.method == 'POST':
-        data = request.get_json()
-        chemist_id = data.get('chemist_id')
-        items      = data.get('items', [])
-        presc_id   = data.get('prescription_id')
-        notes      = data.get('notes','')
-        is_emerg   = data.get('is_emergency', 0)
-        if not chemist_id or not items:
-            return jsonify({'success': False, 'message': 'Missing order details'}), 400
-        conn = get_db()
-        try:
-            with conn.cursor() as c:
-                total = 0
-                for item in items:
-                    c.execute("SELECT price,stock FROM medicines WHERE id=%s AND chemist_id=%s",
-                              (item['medicine_id'], chemist_id))
-                    med = c.fetchone()
-                    if med:
-                        total += med['price'] * item['quantity']
-                c.execute("""INSERT INTO orders (patient_id,chemist_id,prescription_id,
-                    total_amount,notes,is_emergency) VALUES (%s,%s,%s,%s,%s,%s)""",
-                    (uid, chemist_id, presc_id or None, total, notes, is_emerg))
-                order_id = c.lastrowid
-                for item in items:
-                    c.execute("SELECT price FROM medicines WHERE id=%s", (item['medicine_id'],))
-                    med = c.fetchone()
-                    if med:
-                        c.execute("""INSERT INTO order_items (order_id,medicine_id,quantity,price)
-                            VALUES (%s,%s,%s,%s)""",
-                            (order_id, item['medicine_id'], item['quantity'], med['price']))
-            conn.commit()
-            return jsonify({'success': True, 'message': 'Order placed successfully!', 'order_id': order_id})
-        finally:
-            conn.close()
-
     conn = get_db()
     try:
         with conn.cursor() as c:
@@ -662,24 +628,16 @@ def patient_orders():
                 WHERE o.patient_id=%s ORDER BY o.created_at DESC""", (uid,))
             orders = c.fetchall()
             for o in orders:
-                c.execute("SELECT m.name, oi.quantity, oi.price FROM order_items oi JOIN medicines m ON oi.medicine_id=m.id WHERE oi.order_id=%s", (o['id'],))
+                c.execute("""SELECT m.name, oi.quantity, oi.price
+                    FROM order_items oi JOIN medicines m ON oi.medicine_id=m.id
+                    WHERE oi.order_id=%s""", (o['id'],))
                 items = c.fetchall()
-                o['medicine_summary'] = ", ".join([f"{i['name']} (x{i['quantity']})" for i in items])
-                
-            c.execute("SELECT * FROM prescriptions WHERE patient_id=%s", (uid,))
-            prescriptions = c.fetchall()
-            c.execute("""SELECT ch.*, u.name as owner_name FROM chemists ch
-                JOIN users u ON ch.user_id=u.id WHERE ch.is_active=1""")
-            chemists = c.fetchall()
-            c.execute("""SELECT m.*, ch.shop_name FROM medicines m
-                JOIN chemists ch ON m.chemist_id=ch.id WHERE m.is_available=1 AND m.stock>0""")
-            medicines = c.fetchall()
+                o['medicine_summary'] = ', '.join([f"{i['name']} (x{i['quantity']})" for i in items])
     finally:
         conn.close()
-    return render_template('patient/orders.html',
-        orders=orders, prescriptions=prescriptions,
-        chemists=chemists, medicines=medicines)
+    return render_template('patient/orders.html', orders=orders)
 
+# ─── NEARBY CHEMISTS (simple list view) ────────────────────────────────────
 @app.route('/patient/chemists-map')
 @login_required
 @role_required('patient')
@@ -687,26 +645,13 @@ def chemists_map():
     conn = get_db()
     try:
         with conn.cursor() as c:
-            c.execute("""SELECT ch.*, u.name as owner_name, u.email
+            c.execute("""SELECT ch.*, u.name as owner_name
                 FROM chemists ch JOIN users u ON ch.user_id=u.id
                 WHERE ch.is_active=1""")
             chemists = c.fetchall()
-            
-            # Fetch medicines for each chemist
-            for ch in chemists:
-                c.execute("SELECT name FROM medicines WHERE chemist_id=%s AND is_available=1 AND stock>0", (ch['id'],))
-                ch['medicines'] = [row['name'] for row in c.fetchall()]
     finally:
         conn.close()
-    return render_template('patient/chemists_map.html', chemists=chemists,
-                           chemists_json=json.dumps([{
-                               'id': ch['id'], 'shop_name': ch['shop_name'],
-                               'address': ch['address'] or 'N/A',
-                               'phone': ch['phone'] or 'N/A',
-                               'lat': float(ch['latitude'] or 20.5937),
-                               'lng': float(ch['longitude'] or 78.9629),
-                               'medicines': ch.get('medicines', [])
-                           } for ch in chemists]))
+    return render_template('patient/chemists_map.html', chemists=chemists)
 
 # ─── CHEMIST ROUTES ───────────────────────────────────────────────────────────
 @app.route('/chemist/dashboard')
@@ -793,6 +738,7 @@ def chemist_inventory():
         conn.close()
     return render_template('chemist/inventory.html', medicines=medicines, now=datetime.now())
 
+# ─── CHEMIST ORDERS (read-only list) ────────────────────────────────────────
 @app.route('/chemist/orders')
 @login_required
 @role_required('chemist')
@@ -804,55 +750,19 @@ def chemist_orders():
             c.execute("SELECT id FROM chemists WHERE user_id=%s", (uid,))
             chemist = c.fetchone()
             cid = chemist['id']
-            c.execute("""SELECT o.*, u.name as patient_name, u.phone as patient_phone, u.email as patient_email
+            c.execute("""SELECT o.*, u.name as patient_name, u.phone as patient_phone
                 FROM orders o JOIN users u ON o.patient_id=u.id
                 WHERE o.chemist_id=%s ORDER BY o.created_at DESC""", (cid,))
             orders = c.fetchall()
             for o in orders:
-                c.execute("SELECT m.name, oi.quantity FROM order_items oi JOIN medicines m ON oi.medicine_id=m.id WHERE oi.order_id=%s", (o['id'],))
+                c.execute("""SELECT m.name, oi.quantity
+                    FROM order_items oi JOIN medicines m ON oi.medicine_id=m.id
+                    WHERE oi.order_id=%s""", (o['id'],))
                 items = c.fetchall()
-                o['medicine_summary'] = ", ".join([f"{i['name']} (x{i['quantity']})" for i in items])
+                o['medicine_summary'] = ', '.join([f"{i['name']} (x{i['quantity']})" for i in items])
     finally:
         conn.close()
     return render_template('chemist/orders.html', orders=orders)
-
-@app.route('/chemist/orders/update', methods=['POST'])
-@login_required
-@role_required('chemist')
-def update_order_status():
-    data   = request.get_json()
-    oid    = data.get('order_id')
-    status = data.get('status')
-    uid    = session['user_id']
-    valid  = ['pending','processing','ready','delivered','cancelled']
-    if status not in valid:
-        return jsonify({'success': False, 'message': 'Invalid status'}), 400
-    conn = get_db()
-    try:
-        with conn.cursor() as c:
-            c.execute("SELECT id FROM chemists WHERE user_id=%s", (uid,))
-            chemist = c.fetchone()
-            c.execute("UPDATE orders SET status=%s WHERE id=%s AND chemist_id=%s",
-                      (status, oid, chemist['id']))
-        conn.commit()
-        return jsonify({'success': True, 'message': f'Order status updated to {status}'})
-    finally:
-        conn.close()
-
-@app.route('/chemist/orders/<int:order_id>/items')
-@login_required
-@role_required('chemist')
-def order_items_detail(order_id):
-    conn = get_db()
-    try:
-        with conn.cursor() as c:
-            c.execute("""SELECT oi.*, m.name as medicine_name, m.unit
-                FROM order_items oi JOIN medicines m ON oi.medicine_id=m.id
-                WHERE oi.order_id=%s""", (order_id,))
-            items = c.fetchall()
-    finally:
-        conn.close()
-    return jsonify({'items': items})
 
 # ─── ADMIN ROUTES ─────────────────────────────────────────────────────────────
 @app.route('/admin/dashboard')
