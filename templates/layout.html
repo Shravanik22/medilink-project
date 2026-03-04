@@ -12,7 +12,7 @@
         href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💊</text></svg>">
 </head>
 
-<body class="{{ session.role + '-layout' if session.role else '' }}">
+<body class="{{ active_role + '-layout' if active_role else '' }}">
 
     {% with messages = get_flashed_messages(with_categories=true) %}
     {% for cat, msg in messages %}
@@ -35,16 +35,16 @@
 
             <div class="sidebar-user">
                 <div class="sidebar-user-info">
-                    <div class="sidebar-user-avatar">{{ session.name[0]|upper }}</div>
+                    <div class="sidebar-user-avatar">{{ active_name[0]|upper }}</div>
                     <div>
-                        <div class="user-name">{{ session.name }}</div>
-                        <span class="user-role">{{ session.role }}</span>
+                        <div class="user-name">{{ active_name }}</div>
+                        <span class="user-role">{{ active_role }}</span>
                     </div>
                 </div>
             </div>
 
             <nav class="sidebar-nav">
-                {% if session.role == 'patient' %}
+                {% if active_role == 'patient' %}
                 <div class="nav-section-title">Patient Portal</div>
                 <a href="{{ url_for('patient_dashboard') }}" class="nav-item">
                     <span class="nav-icon">🏠</span> Dashboard
@@ -68,7 +68,7 @@
                     <span class="nav-icon">🗺️</span> Nearby Chemists
                 </a>
 
-                {% elif session.role == 'chemist' %}
+                {% elif active_role == 'chemist' %}
                 <div class="nav-section-title">Chemist Panel</div>
                 <a href="{{ url_for('chemist_dashboard') }}" class="nav-item">
                     <span class="nav-icon">🏠</span> Dashboard
@@ -80,7 +80,7 @@
                     <span class="nav-icon">📦</span> Orders
                 </a>
 
-                {% elif session.role == 'admin' %}
+                {% elif active_role == 'admin' %}
                 <div class="nav-section-title">Admin Panel</div>
                 <a href="{{ url_for('admin_dashboard') }}" class="nav-item">
                     <span class="nav-icon">🏠</span> Dashboard

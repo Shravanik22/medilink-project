@@ -1,7 +1,7 @@
 {% extends "layout.html" %}
 {% block title %}Patient Dashboard{% endblock %}
 {% block page_title %}My Dashboard{% endblock %}
-{% block page_subtitle %}Welcome back, {{ session.name }}! Here's your health overview.{% endblock %}
+{% block page_subtitle %}Welcome back, {{ active_name }}! Here's your health overview.{% endblock %}
 {% block page_actions %}
 <a href="{{ url_for('upload_report') }}" class="btn btn-primary">
     📤 Upload Report

@@ -77,14 +77,21 @@
     chemistsData.forEach(ch => {
         if (!ch.lat || !ch.lng) return;
         const m = L.marker([ch.lat, ch.lng], { icon: pharmIcon }).addTo(map);
+        let medsHtml = ch.medicines && ch.medicines.length > 0
+            ? `<div style="font-size:11px;color:#10B981;margin:4px 0;max-height:60px;overflow-y:auto;background:#ECFDF5;padding:4px;border-radius:4px">
+                 <strong>In Stock:</strong> ${ch.medicines.slice(0, 5).join(', ')}${ch.medicines.length > 5 ? '...' : ''}
+               </div>`
+            : '<p style="font-size:11px;color:#EF4444;margin:4px 0">No distinct medicines listed</p>';
+
         m.bindPopup(`
     <div style="font-family:Inter,sans-serif;min-width:180px">
       <h4 style="margin:0 0 6px;color:#1e293b">🏪 ${ch.shop_name}</h4>
       <p style="font-size:12px;color:#64748b;margin:2px 0">📍 ${ch.address}</p>
       <p style="font-size:12px;color:#64748b;margin:2px 0">📞 ${ch.phone}</p>
+      ${medsHtml}
       <button onclick="showChemistDetail(${ch.id})"
-        style="margin-top:8px;background:#2563EB;color:#fff;border:none;padding:5px 12px;border-radius:6px;cursor:pointer;font-size:12px">
-        View Details
+        style="margin-top:8px;background:#2563EB;color:#fff;border:none;padding:5px 12px;border-radius:6px;cursor:pointer;font-size:12px;width:100%">
+        View Details & Order
       </button>
     </div>`);
         markers[ch.id] = m;

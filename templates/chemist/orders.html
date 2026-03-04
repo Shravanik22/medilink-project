@@ -45,6 +45,8 @@
                             {% if o.is_emergency %}
                             <span class="badge badge-danger">🚨 URGENT</span>
                             {% endif %}
+                            <div style="font-size:12px;color:var(--text-muted);margin-top:4px">{{ o.medicine_summary or
+                                'See details' }}</div>
                         </td>
                         <td>
                             <div class="font-bold text-sm">{{ o.patient_name }}</div>
