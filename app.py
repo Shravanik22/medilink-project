@@ -645,7 +645,7 @@ def patient_orders():
         conn.close()
     return render_template('patient/orders.html', orders=orders)
 
-# ─── NEARBY CHEMISTS (simple list view) ────────────────────────────────────
+# ─── NEARBY CHEMISTS (list + Leaflet.js map) ───────────────────────────────
 @app.route('/patient/chemists-map')
 @login_required
 @role_required('patient')
@@ -659,7 +659,19 @@ def chemists_map():
             chemists = c.fetchall()
     finally:
         conn.close()
-    return render_template('patient/chemists_map.html', chemists=chemists)
+    # Build JSON for Leaflet markers (only chemists with valid coordinates)
+    import json as _json
+    chemists_json = _json.dumps([{
+        'name':    ch['shop_name'],
+        'owner':   ch['owner_name'],
+        'address': ch.get('address') or '',
+        'phone':   ch.get('phone') or '',
+        'lat':     float(ch['latitude']),
+        'lng':     float(ch['longitude']),
+    } for ch in chemists if ch.get('latitude') and ch.get('longitude')])
+    return render_template('patient/chemists_map.html',
+                           chemists=chemists, chemists_json=chemists_json)
+
 
 # ─── CHEMIST ROUTES ───────────────────────────────────────────────────────────
 @app.route('/chemist/dashboard')
