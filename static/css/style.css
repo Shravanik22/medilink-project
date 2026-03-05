@@ -2090,3 +2090,10 @@ body.chemist-layout .sidebar-footer .logout-btn {
 .flash-hidden {
     display: none;
 }
+
+/* Chemist orders – status update dropdown */
+.status-select {
+    width: 140px;
+    padding: 6px 10px;
+    font-size: 13px;
+}

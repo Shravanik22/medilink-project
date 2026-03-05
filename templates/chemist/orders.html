@@ -52,7 +52,8 @@
                         <td>
                             {% if o.status not in ('delivered', 'cancelled') %}
                             <select class="form-control status-select" data-order-id="{{ o.id }}"
-                                onchange="updateStatus(this)" style="width:140px;padding:6px 10px;font-size:13px">
+                                aria-label="Update order #{{ o.id }} status" title="Update order status"
+                                onchange="updateStatus(this)">
                                 <option value="">— Change —</option>
                                 <option value="pending">⏳ Pending</option>
                                 <option value="processing">⚙️ Processing</option>
