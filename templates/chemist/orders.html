@@ -8,9 +8,9 @@
     <div class="card-header">
         <span class="card-title">📦 All Orders</span>
     </div>
-    <div class="card-body" style="padding:0">
+    <div class="card-body card-body-flush">
         {% if orders %}
-        <div class="table-wrapper" style="border:none;border-radius:0">
+        <div class="table-wrapper table-flush">
             <table>
                 <thead>
                     <tr>
@@ -19,23 +19,52 @@
                         <th>Medicines</th>
                         <th>Amount</th>
                         <th>Status</th>
+                        <th>Update</th>
                         <th>Date</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for o in orders %}
-                    <tr>
+                    <tr id="order-row-{{ o.id }}">
                         <td><strong>#{{ o.id }}</strong></td>
                         <td>
                             <div class="font-bold text-sm">{{ o.patient_name }}</div>
                             <div class="text-xs text-muted">{{ o.patient_phone or '' }}</div>
                         </td>
-                        <td style="font-size:12px;color:var(--text-muted)">{{ o.medicine_summary or '—' }}</td>
-                        <td class="font-bold" style="color:var(--primary)">₹{{ "%.2f"|format(o.total_amount) }}</td>
+                        <td class="td-medicine">{{ o.medicine_summary or '—' }}</td>
+                        <td class="td-amount">₹{{ "%.2f"|format(o.total_amount) }}</td>
                         <td>
-                            <span class="badge badge-{{ o.status }}">{{ o.status|title }}</span>
+                            {% set s = (o.status or 'pending')|lower %}
+                            {% if s == 'pending' %}
+                            <span class="badge badge-status-pending" id="badge-{{ o.id }}">⏳ Pending</span>
+                            {% elif s == 'processing' %}
+                            <span class="badge badge-status-processing" id="badge-{{ o.id }}">⚙️ Processing</span>
+                            {% elif s == 'ready' %}
+                            <span class="badge badge-status-ready" id="badge-{{ o.id }}">✅ Ready</span>
+                            {% elif s == 'delivered' %}
+                            <span class="badge badge-status-delivered" id="badge-{{ o.id }}">🎉 Delivered</span>
+                            {% elif s == 'cancelled' %}
+                            <span class="badge badge-status-cancelled" id="badge-{{ o.id }}">❌ Cancelled</span>
+                            {% else %}
+                            <span class="badge badge-pending" id="badge-{{ o.id }}">{{ s|title }}</span>
+                            {% endif %}
                         </td>
-                        <td class="text-sm">{{ o.created_at.strftime('%d %b %Y, %H:%M') }}</td>
+                        <td>
+                            {% if o.status not in ('delivered', 'cancelled') %}
+                            <select class="form-control status-select" data-order-id="{{ o.id }}"
+                                onchange="updateStatus(this)" style="width:140px;padding:6px 10px;font-size:13px">
+                                <option value="">— Change —</option>
+                                <option value="pending">⏳ Pending</option>
+                                <option value="processing">⚙️ Processing</option>
+                                <option value="ready">✅ Ready</option>
+                                <option value="delivered">🎉 Delivered</option>
+                                <option value="cancelled">❌ Cancelled</option>
+                            </select>
+                            {% else %}
+                            <span class="text-xs text-muted">Finalised</span>
+                            {% endif %}
+                        </td>
+                        <td class="td-date">{{ o.created_at.strftime('%d %b %Y, %H:%M') }}</td>
                     </tr>
                     {% endfor %}
                 </tbody>
@@ -50,4 +79,31 @@
         {% endif %}
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    async function updateStatus(sel) {
+        const orderId = sel.dataset.orderId;
+        const newStatus = sel.value;
+        if (!newStatus) return;
+
+        // Disable while saving
+        sel.disabled = true;
+        const data = await postJSON('{{ url_for("update_order_status") }}', {
+            order_id: parseInt(orderId),
+            status: newStatus
+        });
+        sel.disabled = false;
+
+        if (data.success) {
+            Toast.success(data.message);
+            // Refresh the page so badge and state reflect correctly
+            setTimeout(() => location.reload(), 800);
+        } else {
+            Toast.error(data.message || 'Update failed');
+            sel.value = ''; // reset dropdown
+        }
+    }
+</script>
 {% endblock %}

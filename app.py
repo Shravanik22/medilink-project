@@ -622,12 +622,86 @@ def search_medicines():
     return render_template('patient/medicines.html',
         medicines=medicines, categories=categories, query=query, selected_cat=category)
 
-# ─── PATIENT ORDER HISTORY (read-only) ─────────────────────────────────────
-@app.route('/patient/orders')
+# ─── PATIENT ORDERS (place + history) ──────────────────────────────────────
+@app.route('/patient/orders', methods=['GET', 'POST'])
 @login_required
 @role_required('patient')
 def patient_orders():
     uid = session['user_id']
+
+    # ── POST: place a new order ────────────────────────────────────────────
+    if request.method == 'POST':
+        data = request.get_json() or {}
+        chemist_id      = data.get('chemist_id')
+        items           = data.get('items', [])          # [{medicine_id, quantity}]
+        prescription_id = data.get('prescription_id') or None
+        notes           = data.get('notes', '')
+        is_emergency    = int(data.get('is_emergency', 0))
+
+        if not chemist_id or not items:
+            return jsonify({'success': False, 'message': 'Chemist and items are required'}), 400
+
+        conn = get_db()
+        try:
+            with conn.cursor() as c:
+                # Verify chemist exists and is active
+                c.execute("SELECT id FROM chemists WHERE id=%s AND is_active=1", (chemist_id,))
+                if not c.fetchone():
+                    return jsonify({'success': False, 'message': 'Invalid chemist selected'}), 400
+
+                # Calculate total and validate stock for each item
+                total = 0.0
+                validated = []
+                for item in items:
+                    mid = item.get('medicine_id')
+                    qty = int(item.get('quantity', 1))
+                    if qty < 1:
+                        continue
+                    c.execute(
+                        "SELECT id, name, price, stock FROM medicines WHERE id=%s AND chemist_id=%s AND is_available=1",
+                        (mid, chemist_id)
+                    )
+                    med = c.fetchone()
+                    if not med:
+                        return jsonify({'success': False,
+                                        'message': f'Medicine #{mid} not found at this chemist'}), 400
+                    if med['stock'] < qty:
+                        return jsonify({'success': False,
+                                        'message': f'Insufficient stock for {med["name"]} (available: {med["stock"]})'}), 400
+                    validated.append({'id': mid, 'qty': qty, 'price': float(med['price']), 'name': med['name']})
+                    total += float(med['price']) * qty
+
+                if not validated:
+                    return jsonify({'success': False, 'message': 'No valid items in order'}), 400
+
+                # Insert order
+                c.execute("""
+                    INSERT INTO orders (patient_id, chemist_id, prescription_id, total_amount, notes, is_emergency, status)
+                    VALUES (%s, %s, %s, %s, %s, %s, 'pending')
+                """, (uid, chemist_id, prescription_id, total, notes, is_emergency))
+                order_id = c.lastrowid
+
+                # Insert order items and deduct stock
+                for v in validated:
+                    c.execute(
+                        "INSERT INTO order_items (order_id, medicine_id, quantity, price) VALUES (%s,%s,%s,%s)",
+                        (order_id, v['id'], v['qty'], v['price'])
+                    )
+                    c.execute(
+                        "UPDATE medicines SET stock = stock - %s WHERE id=%s",
+                        (v['qty'], v['id'])
+                    )
+
+            conn.commit()
+            return jsonify({'success': True, 'message': f'Order #{order_id} placed successfully! 🎉',
+                            'order_id': order_id})
+        except Exception as e:
+            app.logger.error('Order placement error: %s', e)
+            return jsonify({'success': False, 'message': 'Server error placing order. Please try again.'}), 500
+        finally:
+            conn.close()
+
+    # ── GET: order history ─────────────────────────────────────────────────
     conn = get_db()
     try:
         with conn.cursor() as c:
@@ -644,6 +718,7 @@ def patient_orders():
     finally:
         conn.close()
     return render_template('patient/orders.html', orders=orders)
+
 
 # ─── NEARBY CHEMISTS (list + Leaflet.js map) ───────────────────────────────
 @app.route('/patient/chemists-map')
@@ -783,6 +858,40 @@ def chemist_orders():
     finally:
         conn.close()
     return render_template('chemist/orders.html', orders=orders)
+
+# ─── CHEMIST: update order status ───────────────────────────────────────────
+@app.route('/chemist/orders/update-status', methods=['POST'])
+@login_required
+@role_required('chemist')
+def update_order_status():
+    uid  = session['user_id']
+    data = request.get_json() or {}
+    order_id   = data.get('order_id')
+    new_status = data.get('status', '').lower()
+    allowed    = ('pending', 'processing', 'ready', 'delivered', 'cancelled')
+    if new_status not in allowed:
+        return jsonify({'success': False, 'message': 'Invalid status'}), 400
+    conn = get_db()
+    try:
+        with conn.cursor() as c:
+            # Ensure the order belongs to this chemist
+            c.execute("SELECT id FROM chemists WHERE user_id=%s", (uid,))
+            chemist = c.fetchone()
+            if not chemist:
+                return jsonify({'success': False, 'message': 'Chemist not found'}), 403
+            cid = chemist['id']
+            c.execute("SELECT id FROM orders WHERE id=%s AND chemist_id=%s", (order_id, cid))
+            if not c.fetchone():
+                return jsonify({'success': False, 'message': 'Order not found'}), 404
+            c.execute("UPDATE orders SET status=%s WHERE id=%s", (new_status, order_id))
+        conn.commit()
+        return jsonify({'success': True, 'message': f'Order #{order_id} marked as {new_status.title()}'})
+    except Exception as e:
+        app.logger.error('Status update error: %s', e)
+        return jsonify({'success': False, 'message': 'Server error'}), 500
+    finally:
+        conn.close()
+
 
 # ─── ADMIN ROUTES ─────────────────────────────────────────────────────────────
 @app.route('/admin/dashboard')
