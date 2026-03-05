@@ -16,7 +16,7 @@
 
     {% with messages = get_flashed_messages(with_categories=true) %}
     {% for cat, msg in messages %}
-    <div data-flash="{{ cat }}" style="display:none">{{ msg }}</div>
+    <div data-flash="{{ cat }}" class="flash-hidden">{{ msg }}</div>
     {% endfor %}
     {% endwith %}
 

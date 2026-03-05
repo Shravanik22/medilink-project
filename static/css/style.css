@@ -1982,3 +1982,105 @@ body.chemist-layout .sidebar-footer .logout-btn {
         grid-template-columns: repeat(2, 1fr);
     }
 }
+
+/* ============================================================
+   Orders page – utility classes  (replaces inline styles)
+   ============================================================ */
+.card-body-flush {
+    padding: 0;
+}
+
+.table-flush {
+    border: none;
+    border-radius: 0;
+}
+
+.td-medicine {
+    font-size: 12px;
+    color: var(--text-muted);
+}
+
+.td-amount {
+    color: var(--primary);
+    font-weight: 700;
+}
+
+.td-date {
+    font-size: 13px;
+}
+
+/* Order status badges – coloured borders */
+.badge-status-pending {
+    background: #fff7ed;
+    color: #c2410c;
+    border: 1px solid #fed7aa;
+}
+
+.badge-status-processing {
+    background: #eff6ff;
+    color: #1d4ed8;
+    border: 1px solid #bfdbfe;
+}
+
+.badge-status-ready {
+    background: #f5f3ff;
+    color: #6d28d9;
+    border: 1px solid #ddd6fe;
+}
+
+.badge-status-delivered {
+    background: #f0fdf4;
+    color: #15803d;
+    border: 1px solid #bbf7d0;
+}
+
+.badge-status-cancelled {
+    background: #fef2f2;
+    color: #b91c1c;
+    border: 1px solid #fecaca;
+}
+
+/* ============================================================
+   Nearby Chemists map page – utility classes
+   ============================================================ */
+.map-card {
+    margin-bottom: 20px;
+    overflow: hidden;
+}
+
+.map-hint {
+    padding: 10px 16px;
+    background: var(--surface2);
+    font-size: 12px;
+    color: var(--text-muted);
+    border-top: 1px solid var(--border);
+}
+
+.chemist-search {
+    width: 220px;
+}
+
+/* Leaflet map container */
+#map {
+    height: 400px;
+    width: 100%;
+    border-radius: 12px 12px 0 0;
+    z-index: 1;
+}
+
+.leaflet-popup-content strong {
+    font-size: 14px;
+}
+
+.leaflet-popup-content p {
+    margin: 4px 0;
+    font-size: 13px;
+    color: #555;
+}
+
+/* ============================================================
+   Layout flash message hidden helper
+   ============================================================ */
+.flash-hidden {
+    display: none;
+}

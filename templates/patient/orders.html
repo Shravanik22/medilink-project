@@ -8,9 +8,9 @@
     <div class="card-header">
         <span class="card-title">📋 Order History</span>
     </div>
-    <div class="card-body" style="padding:0">
+    <div class="card-body card-body-flush">
         {% if orders %}
-        <div class="table-wrapper" style="border:none;border-radius:0">
+        <div class="table-wrapper table-flush">
             <table>
                 <thead>
                     <tr>
@@ -27,31 +27,25 @@
                     <tr>
                         <td><strong>#{{ o.id }}</strong></td>
                         <td>{{ o.shop_name }}</td>
-                        <td style="font-size:12px;color:var(--text-muted)">{{ o.medicine_summary or '—' }}</td>
-                        <td class="font-bold" style="color:var(--primary)">₹{{ "%.2f"|format(o.total_amount) }}</td>
+                        <td class="td-medicine">{{ o.medicine_summary or '—' }}</td>
+                        <td class="td-amount">₹{{ "%.2f"|format(o.total_amount) }}</td>
                         <td>
-                            {# Colored status badge #}
                             {% set s = (o.status or 'pending')|lower %}
                             {% if s == 'pending' %}
-                            <span class="badge" style="background:#fff7ed;color:#c2410c;border:1px solid #fed7aa">⏳
-                                Pending</span>
+                            <span class="badge badge-status-pending">⏳ Pending</span>
                             {% elif s == 'processing' %}
-                            <span class="badge" style="background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe">⚙️
-                                Processing</span>
+                            <span class="badge badge-status-processing">⚙️ Processing</span>
                             {% elif s == 'ready' %}
-                            <span class="badge" style="background:#f5f3ff;color:#6d28d9;border:1px solid #ddd6fe">✅
-                                Ready</span>
+                            <span class="badge badge-status-ready">✅ Ready</span>
                             {% elif s == 'delivered' %}
-                            <span class="badge" style="background:#f0fdf4;color:#15803d;border:1px solid #bbf7d0">🎉
-                                Delivered</span>
+                            <span class="badge badge-status-delivered">🎉 Delivered</span>
                             {% elif s == 'cancelled' %}
-                            <span class="badge" style="background:#fef2f2;color:#b91c1c;border:1px solid #fecaca">❌
-                                Cancelled</span>
+                            <span class="badge badge-status-cancelled">❌ Cancelled</span>
                             {% else %}
                             <span class="badge badge-pending">{{ s|title }}</span>
                             {% endif %}
                         </td>
-                        <td class="text-sm">{{ o.created_at.strftime('%d %b %Y') }}</td>
+                        <td class="td-date">{{ o.created_at.strftime('%d %b %Y') }}</td>
                     </tr>
                     {% endfor %}
                 </tbody>
