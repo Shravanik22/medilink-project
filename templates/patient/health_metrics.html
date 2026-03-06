@@ -80,13 +80,13 @@
 </div>
 
 <!-- ── Health Insights ── -->
-<div class="card mb-5" id="insightsCard" style="display:none">
+<div class="card mb-5 insights-card-hidden" id="insightsCard">
     <div class="card-header">
         <span class="card-title">💡 Health Insights & Suggestions</span>
         <span class="badge badge-info">AI Powered</span>
     </div>
     <div class="card-body">
-        <div id="insightsList" style="display:flex;flex-direction:column;gap:12px"></div>
+        <div id="insightsList" class="insights-list"></div>
     </div>
 </div>
 
@@ -94,10 +94,10 @@
 <div class="card">
     <div class="card-header">
         <span class="card-title">📅 Full History</span>
-        <input type="text" id="metricsSearch" class="form-control" style="width:220px" placeholder="🔍 Search records…">
+        <input type="text" id="metricsSearch" class="form-control metrics-search" placeholder="🔍 Search records…">
     </div>
-    <div class="card-body" style="padding:0">
-        <div class="table-wrapper" style="border:none;border-radius:0">
+    <div class="card-body card-body-p0">
+        <div class="table-wrapper table-borderless">
             <table class="sortable" id="metricsTable">
                 <thead>
                     <tr>
@@ -137,7 +137,7 @@
             <div class="empty-icon">🧬</div>
             <h3>No Health Metrics Yet</h3>
             <p>Upload a medical report (PDF or image) to automatically extract your health data using OCR.</p>
-            <a href="{{ url_for('upload_report') }}" class="btn btn-primary" style="margin-top:16px">
+            <a href="{{ url_for('upload_report') }}" class="btn btn-primary upload-report-btn-link">
                 📤 Upload Report
             </a>
         </div>

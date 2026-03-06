@@ -2097,3 +2097,679 @@ body.chemist-layout .sidebar-footer .logout-btn {
     padding: 6px 10px;
     font-size: 13px;
 }
+
+/* ============================================================
+   INLINE-STYLE REPLACEMENTS
+   Classes below replace inline style="" attributes throughout
+   all templates to satisfy the "no inline styles" lint rule.
+   ============================================================ */
+
+/* --- Inventory / Chemist --- */
+.stats-grid-4col {
+    grid-template-columns: repeat(4, 1fr);
+}
+
+.card-header-controls {
+    display: flex;
+    gap: 10px;
+}
+
+.inv-search {
+    width: 220px;
+}
+
+.card-body-p0 {
+    padding: 0;
+}
+
+.table-borderless {
+    border: none;
+    border-radius: 0;
+}
+
+.price-text {
+    color: var(--primary);
+}
+
+.stock-cell {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.stock-bar-fixed {
+    width: 60px;
+}
+
+.btn-row {
+    display: flex;
+    gap: 6px;
+}
+
+.expiry-hint {
+    font-size: 11px;
+}
+
+.edit-status-row {
+    display: none;
+}
+
+.edit-status-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+}
+
+.form-label-inline {
+    margin: 0;
+}
+
+/* --- Medicines / Patient --- */
+.search-form {
+    display: flex;
+    gap: 12px;
+    align-items: flex-end;
+    flex-wrap: wrap;
+}
+
+.search-field {
+    flex: 1;
+    min-width: 220px;
+    margin: 0;
+}
+
+.category-field {
+    min-width: 180px;
+    margin: 0;
+}
+
+.badge-small {
+    font-size: 11px;
+}
+
+.med-card-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 8px;
+}
+
+.med-price-row {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 10px;
+}
+
+.med-unit-text {
+    font-size: 12px;
+    color: var(--text-muted);
+}
+
+.badge-margin-left {
+    margin-left: 6px;
+}
+
+.med-expiry-wrap {
+    margin-top: 6px;
+}
+
+.cart-float {
+    display: none;
+    position: fixed;
+    bottom: 30px;
+    right: 30px;
+    z-index: 100;
+}
+
+.cart-float-btn {
+    border-radius: 99px;
+    box-shadow: 0 8px 24px rgba(16, 185, 129, .4);
+}
+
+.btn-full {
+    flex: 1;
+}
+
+.cart-emergency-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    margin-top: 8px;
+}
+
+.cart-emergency-text {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--danger);
+}
+
+.cart-total-row {
+    text-align: right;
+}
+
+.cart-total-amount {
+    color: var(--accent);
+}
+
+/* --- Results header bar --- */
+.results-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+}
+
+.medicines-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 18px;
+}
+
+/* --- Admin Dashboard --- */
+.order-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 16px;
+    justify-content: center;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+}
+
+.legend-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 3px;
+}
+
+.empty-state-padded {
+    padding: 30px;
+}
+
+/* --- Admin Orders --- */
+.filter-bar {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+}
+
+.search-bar-row {
+    display: flex;
+    gap: 10px;
+}
+
+.order-search {
+    width: 220px;
+}
+
+/* --- Admin Users --- */
+.user-search-row {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.user-search {
+    width: 220px;
+}
+
+.user-avatar-cell {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.user-avatar {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--primary), var(--accent));
+    display: grid;
+    place-items: center;
+    color: #fff;
+    font-weight: 700;
+    font-size: 13px;
+    flex-shrink: 0;
+}
+
+/* --- Base.html flash message --- */
+.flash-msg-hidden {
+    display: none;
+}
+
+/* --- Chemist Dashboard --- */
+.chemist-order-amount {
+    color: var(--primary);
+}
+
+.low-stock-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border);
+}
+
+.low-stock-right {
+    text-align: right;
+}
+
+.pharmacy-info-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 16px;
+}
+
+.pharmacy-info-cell {
+    padding: 14px;
+    background: var(--surface2);
+    border-radius: var(--radius);
+}
+
+/* --- Index (landing) page --- */
+.brand-icon-sm {
+    width: 36px;
+    height: 36px;
+    font-size: 18px;
+}
+
+.hero-glass-btn {
+    background: rgba(255, 255, 255, .12);
+    color: #fff;
+    border: 1px solid rgba(255, 255, 255, .25);
+}
+
+.role-btn-outline {
+    color: #fff;
+    border-color: rgba(255, 255, 255, .3);
+}
+
+/* --- Login page --- */
+.auth-back-link {
+    color: var(--text-muted);
+}
+
+.demo-box {
+    margin-top: 24px;
+    padding: 14px;
+    background: var(--surface2);
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+}
+
+.demo-box-title {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text-muted);
+    margin-bottom: 8px;
+}
+
+.demo-btn-list {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.demo-btn {
+    font-size: 12px;
+    padding: 4px 8px;
+    background: var(--primary-light);
+    color: var(--primary);
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    text-align: left;
+}
+
+.auth-link-mt {
+    margin-top: 12px;
+}
+
+/* --- Patient Dashboard --- */
+.metric-grid-3col {
+    grid-template-columns: repeat(3, 1fr);
+}
+
+.quick-actions-row {
+    display: flex;
+    gap: 14px;
+    flex-wrap: wrap;
+}
+
+/* --- Health Metrics --- */
+.insights-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.metrics-search {
+    width: 220px;
+}
+
+.upload-report-btn-link {
+    margin-top: 16px;
+}
+
+/* --- Upload Prescription --- */
+.dz-selected-filename {
+    margin-top: 10px;
+    font-weight: 600;
+    color: var(--primary);
+}
+
+.presc-list-wrapper {
+    padding: 0;
+}
+
+.presc-filename {
+    font-weight: 600;
+    font-size: 13px;
+}
+
+/* --- Upload Report --- */
+.report-info-box {
+    background: var(--primary-light);
+    border-radius: var(--radius);
+    padding: 14px;
+    margin-bottom: 20px;
+    border: 1px solid rgba(37, 99, 235, .2);
+}
+
+.report-info-text {
+    font-size: 13px;
+    color: var(--primary);
+    font-weight: 500;
+}
+
+.dz-selected-accent {
+    margin-top: 10px;
+    font-weight: 600;
+    color: var(--accent);
+}
+
+.metrics-result-wrap {
+    display: none;
+    margin-top: 20px;
+}
+
+.metrics-extracted-box {
+    background: var(--accent-light);
+    border-radius: var(--radius);
+    padding: 16px;
+    border: 1px solid rgba(16, 185, 129, .3);
+}
+
+.metrics-extracted-title {
+    color: var(--accent-dark);
+    margin-bottom: 12px;
+}
+
+.metrics-grid-3col {
+    grid-template-columns: repeat(3, 1fr);
+}
+
+.metric-value-sm {
+    font-size: 16px;
+}
+
+.report-list-wrapper {
+    padding: 0;
+}
+
+/* ============================================================
+   REGISTER PAGE — role tabs & chemist fields
+   ============================================================ */
+.auth-form-box-reg {
+    max-width: 420px;
+}
+
+.role-selector {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+/* Base state for both tabs */
+.role-tab {
+    flex: 1;
+    padding: 10px;
+    border: 2px solid var(--border);
+    border-radius: var(--radius);
+    text-align: center;
+    cursor: pointer;
+    transition: all .2s;
+    font-weight: 600;
+    font-size: 14px;
+    color: var(--text-muted);
+    background: transparent;
+}
+
+/* Active / selected tab */
+.role-tab.active {
+    border-color: var(--primary);
+    background: var(--primary-light);
+    color: var(--primary);
+}
+
+/* Hidden radio inputs inside the tabs */
+.role-tab input[type="radio"] {
+    display: none;
+}
+
+/* Chemist-only fields — hidden by default, JS reveals */
+.chemist-fields-hidden {
+    display: none;
+}
+
+/* Empty state with less padding (20px) */
+.empty-state-sm {
+    padding: 20px;
+}
+
+/* Insights card — hidden by default, JS reveals */
+.insights-card-hidden {
+    display: none;
+}
+
+/* ============================================================
+   PROFILE SETTINGS PAGE
+   ============================================================ */
+.profile-settings-wrap {
+    max-width: 1000px;
+}
+
+/* Hero card at top */
+.profile-hero-card {
+    border: none;
+    background: linear-gradient(135deg, var(--primary), var(--accent));
+    color: #fff;
+    border-radius: var(--radius-xl);
+    overflow: hidden;
+}
+
+.profile-hero-inner {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    padding: 28px 32px;
+}
+
+.profile-avatar-lg {
+    width: 76px;
+    height: 76px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, .2);
+    border: 3px solid rgba(255, 255, 255, .4);
+    display: grid;
+    place-items: center;
+    font-size: 32px;
+    font-weight: 800;
+    color: #fff;
+    flex-shrink: 0;
+    transition: var(--transition);
+    -webkit-user-select: none;
+    user-select: none;
+}
+
+.profile-hero-name {
+    font-size: 22px;
+    font-weight: 800;
+    color: #fff;
+    margin-bottom: 4px;
+}
+
+.profile-hero-info p {
+    color: rgba(255, 255, 255, .75);
+}
+
+/* Two-column grid: form | sidebar */
+.profile-grid {
+    display: grid;
+    grid-template-columns: 1fr 320px;
+    gap: 24px;
+    align-items: start;
+}
+
+/* Email read-only field */
+.profile-email-readonly {
+    background: var(--surface2);
+    color: var(--text-muted);
+    cursor: not-allowed;
+}
+
+/* Summary sidebar info list */
+.profile-info-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+}
+
+.profile-info-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border);
+    gap: 8px;
+}
+
+.profile-info-row:last-child {
+    border-bottom: none;
+}
+
+.profile-info-label {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: .4px;
+    flex-shrink: 0;
+}
+
+.profile-info-value {
+    color: var(--text);
+    text-align: right;
+    word-break: break-word;
+}
+
+/* Password field wrapper (input + show/hide btn) */
+.pw-input-wrap {
+    position: relative;
+}
+
+.pw-input-wrap .form-control {
+    padding-right: 44px;
+}
+
+.pw-toggle-btn {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 16px;
+    padding: 0;
+    line-height: 1;
+}
+
+/* Password strength bar */
+.pw-strength-wrap {
+    margin-top: 8px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.pw-strength-track {
+    flex: 1;
+    height: 6px;
+    background: var(--border);
+    border-radius: 99px;
+    overflow: hidden;
+}
+
+.pw-strength-fill {
+    height: 100%;
+    border-radius: 99px;
+    width: 0;
+    transition: width .4s ease, background .4s ease;
+}
+
+.pw-strength-label {
+    font-size: 12px;
+    font-weight: 600;
+    min-width: 70px;
+    text-align: right;
+}
+
+/* Tips card */
+.profile-tips-card {
+    background: linear-gradient(135deg, var(--primary-light), var(--accent-light));
+    border-color: transparent;
+}
+
+.profile-tips-title {
+    font-size: 14px;
+    font-weight: 700;
+    margin-bottom: 10px;
+    color: var(--primary);
+}
+
+.profile-tips-list {
+    padding-left: 18px;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.profile-tips-list li {
+    font-size: 13px;
+    color: var(--text-muted);
+    line-height: 1.5;
+}
+
+/* Responsive */
+@media (max-width: 860px) {
+    .profile-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .profile-hero-inner {
+        flex-direction: column;
+        text-align: center;
+        padding: 24px 20px;
+    }
+}

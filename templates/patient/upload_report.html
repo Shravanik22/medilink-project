@@ -11,9 +11,8 @@
             <span class="card-title">📄 Upload New Report</span>
         </div>
         <div class="card-body">
-            <div
-                style="background:var(--primary-light);border-radius:var(--radius);padding:14px;margin-bottom:20px;border:1px solid rgba(37,99,235,.2)">
-                <p style="font-size:13px;color:var(--primary);font-weight:500">🧬 <strong>Auto Extraction</strong> —
+            <div class="report-info-box">
+                <p class="report-info-text">🧬 <strong>Auto Extraction</strong> —
                     Upload your report and we'll automatically extract BP, Sugar, Hemoglobin, Cholesterol, Heart Rate,
                     Weight & Height.</p>
             </div>
@@ -22,14 +21,14 @@
                 <div class="form-group">
                     <label class="form-label">Report File <sup>*</sup></label>
                     <div class="drop-zone">
-                        <input type="file" name="file" id="reportFile" accept=".pdf,.jpg,.jpeg,.png"
-                            style="display:none" required>
+                        <input type="file" name="file" id="reportFile" accept=".pdf,.jpg,.jpeg,.png" class="d-none"
+                            title="Upload medical report" required>
                         <div class="dz-icon">🔬</div>
                         <div class="dz-text">
                             <strong>Click or drag</strong> to upload medical report<br>
                             <small>PDF or image (JPG, PNG) up to 16MB</small>
                         </div>
-                        <div class="dz-selected" style="margin-top:10px;font-weight:600;color:var(--accent)"></div>
+                        <div class="dz-selected dz-selected-accent"></div>
                     </div>
                 </div>
                 <button type="submit" id="repBtn" class="btn btn-accent w-100 btn-lg">
@@ -38,11 +37,10 @@
             </form>
 
             <!-- Extracted Metrics Display -->
-            <div id="metricsResult" style="display:none;margin-top:20px">
-                <div
-                    style="background:var(--accent-light);border-radius:var(--radius);padding:16px;border:1px solid rgba(16,185,129,.3)">
-                    <h4 style="color:var(--accent-dark);margin-bottom:12px">✅ Extracted Health Metrics</h4>
-                    <div id="metricsGrid" class="metric-cards-grid" style="grid-template-columns:repeat(3,1fr)"></div>
+            <div id="metricsResult" class="metrics-result-wrap">
+                <div class="metrics-extracted-box">
+                    <h4 class="metrics-extracted-title">✅ Extracted Health Metrics</h4>
+                    <div id="metricsGrid" class="metric-cards-grid metrics-grid-3col"></div>
                 </div>
             </div>
         </div>
@@ -54,9 +52,9 @@
             <span class="card-title">📁 Past Reports</span>
             <span class="badge badge-info">{{ reports|length }}</span>
         </div>
-        <div class="card-body" style="padding:0">
+        <div class="card-body report-list-wrapper">
             {% if reports %}
-            <div class="table-wrapper" style="border:none;border-radius:0">
+            <div class="table-wrapper table-borderless">
                 <table>
                     <thead>
                         <tr>
@@ -134,7 +132,7 @@
             grid.innerHTML += `
       <div class="metric-card">
         <div class="metric-icon">${metricIcons[key] || '📊'}</div>
-        <div class="metric-value" style="font-size:16px">${val}</div>
+        <div class="metric-value metric-value-sm">${val}</div>
         <div class="metric-label">${metricNames[key] || key}</div>
       </div>`;
         });

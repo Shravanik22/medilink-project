@@ -5,7 +5,7 @@
 
 {% block content %}
 <!-- Status Filter Tabs -->
-<div style="display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap">
+<div class="filter-bar">
     {% for status in ['all','pending','processing','ready','delivered','cancelled'] %}
     <button onclick="filterStatus('{{ status }}')" id="af-{{ status }}"
         class="btn btn-sm {{ 'btn-primary' if status=='all' else 'btn-outline' }} admin-filter">
@@ -17,14 +17,14 @@
 <div class="card">
     <div class="card-header">
         <span class="card-title">📦 Orders</span>
-        <div style="display:flex;gap:10px">
-            <input type="text" id="adminOrderSearch" class="form-control" style="width:220px" placeholder="🔍 Search…">
+        <div class="search-bar-row">
+            <input type="text" id="adminOrderSearch" class="form-control order-search" placeholder="🔍 Search…">
             <span class="badge badge-info">{{ orders|length }} total</span>
         </div>
     </div>
-    <div class="card-body" style="padding:0">
+    <div class="card-body card-body-p0">
         {% if orders %}
-        <div class="table-wrapper" style="border:none;border-radius:0">
+        <div class="table-wrapper table-borderless">
             <table class="sortable" id="adminOrderTable">
                 <thead>
                     <tr>
@@ -46,7 +46,7 @@
                             <div class="text-xs text-muted">{{ o.patient_phone or '' }}</div>
                         </td>
                         <td class="text-sm">{{ o.shop_name }}</td>
-                        <td class="font-bold" style="color:var(--primary)">₹{{ "%.2f"|format(o.total_amount) }}</td>
+                        <td class="font-bold price-text">₹{{ "%.2f"|format(o.total_amount) }}</td>
                         <td><span class="badge badge-{{ o.status }}">{{ o.status|title }}</span></td>
                         <td class="text-sm">{{ o.created_at.strftime('%d %b %Y') }}</td>
                         <td>

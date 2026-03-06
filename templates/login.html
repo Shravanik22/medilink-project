@@ -55,18 +55,16 @@
             <div class="auth-link">
                 Don't have an account? <a href="{{ url_for('register') }}">Create one free</a>
             </div>
-            <div class="auth-link mt-2" style="margin-top:12px">
-                <a href="{{ url_for('index') }}" style="color:var(--text-muted)">← Back to home</a>
+            <div class="auth-link auth-link-mt">
+                <a href="{{ url_for('index') }}" class="auth-back-link">← Back to home</a>
             </div>
 
             <!-- Demo credentials -->
-            <div
-                style="margin-top:24px;padding:14px;background:var(--surface2);border-radius:var(--radius);border:1px solid var(--border)">
-                <p style="font-size:12px;font-weight:700;color:var(--text-muted);margin-bottom:8px">🔑 DEMO CREDENTIALS
+            <div class="demo-box">
+                <p class="demo-box-title">🔑 DEMO CREDENTIALS
                 </p>
-                <div style="display:flex;flex-direction:column;gap:4px">
-                    <button onclick="fillDemo('admin@medilink.com','admin123')"
-                        style="font-size:12px;padding:4px 8px;background:var(--primary-light);color:var(--primary);border:none;border-radius:6px;cursor:pointer;text-align:left">
+                <div class="demo-btn-list">
+                    <button onclick="fillDemo('admin@medilink.com','admin123')" class="demo-btn">
                         🛠️ Admin: admin@medilink.com / admin123
                     </button>
                 </div>

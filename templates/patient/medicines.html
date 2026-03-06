@@ -7,15 +7,15 @@
 <!-- Search Bar -->
 <div class="card mb-5">
     <div class="card-body">
-        <form method="GET" style="display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap">
-            <div class="form-group" style="flex:1;min-width:220px;margin:0">
+        <form method="GET" class="search-form">
+            <div class="form-group search-field">
                 <label class="form-label">Search</label>
                 <input type="text" name="q" class="form-control"
                     placeholder="🔍 Search by name, generic name, category…" value="{{ query }}">
             </div>
-            <div class="form-group" style="min-width:180px;margin:0">
+            <div class="form-group category-field">
                 <label class="form-label">Category</label>
-                <select name="cat" class="form-control">
+                <select name="cat" class="form-control" title="Filter by category">
                     <option value="">All Categories</option>
                     {% for cat in categories %}
                     <option value="{{ cat }}" {{ 'selected' if selected_cat==cat }}>{{ cat }}</option>
@@ -32,32 +32,31 @@
 
 <!-- Results -->
 {% if medicines %}
-<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+<div class="results-header">
     <p class="text-muted text-sm">Found <strong>{{ medicines|length }}</strong> medicines</p>
 </div>
-<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:18px">
+<div class="medicines-grid">
     {% for med in medicines %}
     <div class="medicine-card">
-        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">
+        <div class="med-card-top">
             <div>
                 <div class="med-name">{{ med.name }}</div>
                 <div class="med-generic">{{ med.generic_name or '' }}</div>
             </div>
             {% if med.category %}
-            <span class="badge badge-info" style="font-size:11px">{{ med.category }}</span>
+            <span class="badge badge-info badge-small">{{ med.category }}</span>
             {% endif %}
         </div>
 
-        <div style="display:flex;align-items:center;gap:16px;margin-bottom:10px">
+        <div class="med-price-row">
             <span class="med-price">₹{{ "%.2f"|format(med.price) }}</span>
-            <span style="font-size:12px;color:var(--text-muted)">per {{ med.unit }}</span>
+            <span class="med-unit-text">per {{ med.unit }}</span>
         </div>
 
         <div class="med-stock">
             📦 {{ med.stock }} in stock
             <span
-                class="badge {{ 'badge-success' if med.stock > 5 else ('badge-warning' if med.stock > 0 else 'badge-danger') }}"
-                style="margin-left:6px">
+                class="badge {{ 'badge-success' if med.stock > 5 else ('badge-warning' if med.stock > 0 else 'badge-danger') }} badge-margin-left">
                 {{ 'Available' if med.stock > 5 else ('Low Stock' if med.stock > 0 else 'Out of Stock') }}
             </span>
         </div>
@@ -70,7 +69,7 @@
         <div class="text-xs text-muted">📍 {{ med.chemist_address[:60] }}</div>
         {% endif %}
         {% if med.expiry_date %}
-        <div style="margin-top:6px">
+        <div class="med-expiry-wrap">
             <span class="badge expiry-badge" data-expiry="{{ med.expiry_date }}">
                 📅 Exp: {{ med.expiry_date.strftime('%b %Y') }}
             </span>
@@ -79,8 +78,8 @@
 
         <div class="med-actions">
             <button data-med-id="{{ med.id }}" data-med-name="{{ med.name|e }}" data-med-price="{{ med.price }}"
-                data-med-chemist="{{ med.chemist_id }}" onclick="addToCartFromBtn(this)" class="btn btn-primary btn-sm"
-                style="flex:1" {{ 'disabled' if med.stock==0 }}>
+                data-med-chemist="{{ med.chemist_id }}" onclick="addToCartFromBtn(this)"
+                class="btn btn-primary btn-sm btn-full" {{ 'disabled' if med.stock==0 }}>
                 🛒 Add to Cart
             </button>
             <button data-med-id="{{ med.id }}" onclick="showMedDetail(this.dataset.medId)"
@@ -102,9 +101,8 @@
 {% endif %}
 
 <!-- Cart Floating Button -->
-<div id="cartFloat" style="display:none;position:fixed;bottom:30px;right:30px;z-index:100">
-    <button onclick="Modal.open('cartModal')" class="btn btn-accent btn-lg"
-        style="border-radius:99px;box-shadow:0 8px 24px rgba(16,185,129,.4)">
+<div id="cartFloat" class="cart-float">
+    <button onclick="Modal.open('cartModal')" class="btn btn-accent btn-lg cart-float-btn">
         🛒 Cart (<span id="cartCount">0</span>) — ₹<span id="cartTotal">0.00</span>
     </button>
 </div>
@@ -120,13 +118,13 @@
             <div id="cartItems"></div>
             <div class="form-group mt-4">
                 <label class="form-label">Select Chemist</label>
-                <select id="cartChemist" class="form-control">
+                <select id="cartChemist" class="form-control" title="Select chemist">
                     <option value="">— Auto (from cart) —</option>
                 </select>
             </div>
             <div class="form-group">
                 <label class="form-label">Prescription (optional)</label>
-                <select id="cartPresc" class="form-control">
+                <select id="cartPresc" class="form-control" title="Select prescription">
                     <option value="">— No prescription —</option>
                 </select>
             </div>
@@ -134,9 +132,9 @@
                 <label class="form-label">Notes</label>
                 <textarea id="cartNotes" class="form-control" rows="2" placeholder="Delivery instructions…"></textarea>
             </div>
-            <label style="display:flex;align-items:center;gap:8px;cursor:pointer;margin-top:8px">
-                <input type="checkbox" id="cartEmergency"> <span class="text-sm font-bold"
-                    style="color:var(--danger)">🚨 Emergency Order (Priority Processing)</span>
+            <label class="cart-emergency-label">
+                <input type="checkbox" id="cartEmergency"> <span class="text-sm font-bold cart-emergency-text">🚨
+                    Emergency Order (Priority Processing)</span>
             </label>
         </div>
         <div class="modal-footer">

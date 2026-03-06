@@ -67,6 +67,9 @@
                 <a href="{{ url_for('chemists_map') }}" class="nav-item">
                     <span class="nav-icon">🗺️</span> Nearby Chemists
                 </a>
+                <a href="{{ url_for('profile_settings') }}" class="nav-item">
+                    <span class="nav-icon">⚙️</span> Settings
+                </a>
 
                 {% elif active_role == 'chemist' %}
                 <div class="nav-section-title">Chemist Panel</div>
@@ -78,6 +81,9 @@
                 </a>
                 <a href="{{ url_for('chemist_orders') }}" class="nav-item">
                     <span class="nav-icon">📦</span> Orders
+                </a>
+                <a href="{{ url_for('profile_settings') }}" class="nav-item">
+                    <span class="nav-icon">⚙️</span> Settings
                 </a>
 
                 {% elif active_role == 'admin' %}

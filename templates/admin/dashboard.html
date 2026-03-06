@@ -51,7 +51,7 @@
         </div>
         <div class="card-body">
             <canvas id="orderChart" height="200"></canvas>
-            <div id="orderLegend" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:16px;justify-content:center">
+            <div id="orderLegend" class="order-legend">
             </div>
         </div>
     </div>
@@ -62,9 +62,9 @@
             <span class="card-title">📦 Recent Orders</span>
             <a href="{{ url_for('admin_orders') }}" class="btn btn-ghost btn-sm">View All →</a>
         </div>
-        <div class="card-body" style="padding:0">
+        <div class="card-body card-body-p0">
             {% if recent_orders %}
-            <div class="table-wrapper" style="border:none;border-radius:0">
+            <div class="table-wrapper table-borderless">
                 <table>
                     <thead>
                         <tr>
@@ -87,7 +87,7 @@
                 </table>
             </div>
             {% else %}
-            <div class="empty-state" style="padding:30px">
+            <div class="empty-state empty-state-padded">
                 <div class="empty-icon">📦</div>
                 <h3>No Orders</h3>
             </div>
@@ -102,8 +102,8 @@
         <span class="card-title">👥 Recent Registrations</span>
         <a href="{{ url_for('admin_users') }}" class="btn btn-ghost btn-sm">Manage Users →</a>
     </div>
-    <div class="card-body" style="padding:0">
-        <div class="table-wrapper" style="border:none;border-radius:0">
+    <div class="card-body card-body-p0">
+        <div class="table-wrapper table-borderless">
             <table>
                 <thead>
                     <tr>

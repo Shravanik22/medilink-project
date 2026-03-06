@@ -7,13 +7,13 @@
 <div class="card">
     <div class="card-header">
         <span class="card-title">👥 All Users</span>
-        <div style="display:flex;gap:10px;align-items:center">
-            <input type="text" id="userSearch" class="form-control" style="width:220px" placeholder="🔍 Search users…">
+        <div class="user-search-row">
+            <input type="text" id="userSearch" class="form-control user-search" placeholder="🔍 Search users…">
             <span class="badge badge-info">{{ users|length }} total</span>
         </div>
     </div>
-    <div class="card-body" style="padding:0">
-        <div class="table-wrapper" style="border:none;border-radius:0">
+    <div class="card-body card-body-p0">
+        <div class="table-wrapper table-borderless">
             <table class="sortable" id="userTable">
                 <thead>
                     <tr>
@@ -29,9 +29,8 @@
                     {% for u in users %}
                     <tr id="user-row-{{ u.id }}">
                         <td>
-                            <div style="display:flex;align-items:center;gap:10px">
-                                <div
-                                    style="width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,var(--primary),var(--accent));display:grid;place-items:center;color:#fff;font-weight:700;font-size:13px;flex-shrink:0">
+                            <div class="user-avatar-cell">
+                                <div class="user-avatar">
                                     {{ u.name[0]|upper }}
                                 </div>
                                 <div class="font-bold">{{ u.name }}</div>

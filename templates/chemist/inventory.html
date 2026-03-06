@@ -8,7 +8,7 @@
 
 {% block content %}
 <!-- Stats Row -->
-<div class="stats-grid" style="grid-template-columns:repeat(4,1fr)">
+<div class="stats-grid stats-grid-4col">
     <div class="stat-card">
         <div class="stat-icon blue">💊</div>
         <div class="stat-body">
@@ -44,14 +44,13 @@
 <div class="card">
     <div class="card-header">
         <span class="card-title">💊 Medicine Inventory</span>
-        <div style="display:flex;gap:10px">
-            <input type="text" id="invSearch" class="form-control" style="width:220px"
-                placeholder="🔍 Search medicines…">
+        <div class="card-header-controls">
+            <input type="text" id="invSearch" class="form-control inv-search" placeholder="🔍 Search medicines…">
         </div>
     </div>
-    <div class="card-body" style="padding:0">
+    <div class="card-body card-body-p0">
         {% if medicines %}
-        <div class="table-wrapper" style="border:none;border-radius:0">
+        <div class="table-wrapper table-borderless">
             <table class="sortable" id="invTable">
                 <thead>
                     <tr>
@@ -71,13 +70,13 @@
                         <td class="font-bold">{{ med.name }}</td>
                         <td class="text-muted text-sm">{{ med.generic_name or '–' }}</td>
                         <td>{{ med.category or '–' }}</td>
-                        <td class="font-bold" style="color:var(--primary)">₹{{ "%.2f"|format(med.price) }}</td>
+                        <td class="font-bold price-text">₹{{ "%.2f"|format(med.price) }}</td>
                         <td>
-                            <div style="display:flex;align-items:center;gap:8px">
+                            <div class="stock-cell">
                                 <span data-stock="{{ med.stock }}" class="stock-val">
                                     {{ med.stock }}
                                 </span>
-                                <div class="stock-bar" style="width:60px">
+                                <div class="stock-bar stock-bar-fixed">
                                     <div class="stock-bar-fill" data-stock="{{ med.stock }}"></div>
                                 </div>
                             </div>
@@ -97,7 +96,7 @@
                             </span>
                         </td>
                         <td>
-                            <div style="display:flex;gap:6px">
+                            <div class="btn-row">
                                 <button data-med='{{ med|tojson }}' onclick="editMedFromBtn(this)"
                                     class="btn btn-outline btn-sm">✏️</button>
                                 <button data-med-id="{{ med.id }}" data-med-name="{{ med.name|e }}"
@@ -144,7 +143,7 @@
                 </div>
                 <div class="form-group">
                     <label class="form-label">Unit</label>
-                    <select id="mUnit" class="form-control">
+                    <select id="mUnit" class="form-control" title="Select unit">
                         <option value="strip">Strip</option>
                         <option value="tablet">Tablet</option>
                         <option value="bottle">Bottle</option>
@@ -166,18 +165,18 @@
                 </div>
                 <div class="form-group">
                     <label class="form-label">Expiry Date</label>
-                    <input type="date" id="mExpiry" class="form-control">
-                    <small class="text-muted" style="font-size:11px">Leave blank if not applicable</small>
+                    <input type="date" id="mExpiry" class="form-control" title="Expiry date" placeholder="YYYY-MM-DD">
+                    <small class="text-muted expiry-hint">Leave blank if not applicable</small>
                 </div>
             </div>
             <div class="form-group">
                 <label class="form-label">Description</label>
                 <textarea id="mDesc" class="form-control" rows="2" placeholder="Usage, dosage notes…"></textarea>
             </div>
-            <div id="editStatusRow" style="display:none">
-                <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
+            <div id="editStatusRow" class="edit-status-row">
+                <label class="edit-status-label">
                     <input type="checkbox" id="mAvailable" checked>
-                    <span class="form-label" style="margin:0">Mark as Available</span>
+                    <span class="form-label form-label-inline">Mark as Available</span>
                 </label>
             </div>
         </div>

@@ -50,7 +50,7 @@
         </div>
         <div class="card-body">
             {% if metrics %}
-            <div class="metric-cards-grid" style="grid-template-columns:repeat(3,1fr)">
+            <div class="metric-cards-grid metric-grid-3col">
                 {% if metrics.blood_pressure %}
                 <div class="metric-card">
                     <div class="metric-icon">🩺</div>
@@ -97,7 +97,7 @@
             <p class="text-xs text-muted mt-3">Last updated: {{ metrics.recorded_at.strftime('%d %b %Y, %I:%M %p') if
                 metrics.recorded_at else '–' }}</p>
             {% else %}
-            <div class="empty-state" style="padding:30px 16px">
+            <div class="empty-state empty-state-padded">
                 <div class="empty-icon">🧬</div>
                 <h3>No Health Data</h3>
                 <p>Upload a medical report to auto-extract your health metrics.</p>
@@ -113,9 +113,9 @@
             <span class="card-title">🛒 Recent Orders</span>
             <a href="{{ url_for('patient_orders') }}" class="btn btn-ghost btn-sm">View All →</a>
         </div>
-        <div class="card-body" style="padding:0">
+        <div class="card-body card-body-p0">
             {% if recent_orders %}
-            <div class="table-wrapper" style="border:none;border-radius:0">
+            <div class="table-wrapper table-borderless">
                 <table>
                     <thead>
                         <tr>
@@ -147,7 +147,7 @@
                 </table>
             </div>
             {% else %}
-            <div class="empty-state" style="padding:30px 16px">
+            <div class="empty-state empty-state-padded">
                 <div class="empty-icon">🛒</div>
                 <h3>No Orders Yet</h3>
                 <p>Browse medicines and place your first order.</p>
@@ -164,7 +164,7 @@
         <span class="card-title">⚡ Quick Actions</span>
     </div>
     <div class="card-body">
-        <div style="display:flex;gap:14px;flex-wrap:wrap">
+        <div class="quick-actions-row">
             <a href="{{ url_for('upload_prescription') }}" class="btn btn-outline">📋 Upload Prescription</a>
             <a href="{{ url_for('upload_report') }}" class="btn btn-outline">📄 Upload Medical Report</a>
             <a href="{{ url_for('search_medicines') }}" class="btn btn-outline">🔍 Search Medicines</a>

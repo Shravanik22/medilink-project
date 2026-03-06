@@ -1,0 +1,381 @@
+{% extends "layout.html" %}
+{% block title %}Profile Settings{% endblock %}
+{% block page_title %}⚙️ Profile Settings{% endblock %}
+{% block page_subtitle %}Update your account information{% endblock %}
+
+{% block content %}
+<div class="profile-settings-wrap" id="profileMeta" data-role="{{ active_role }}">
+
+    <!-- ── Avatar / summary card ───────────────────────────────────────── -->
+    <div class="profile-hero-card card mb-5">
+        <div class="profile-hero-inner">
+            <div class="profile-avatar-lg" id="profileAvatarPreview">
+                {{ user.name[0]|upper }}
+            </div>
+            <div class="profile-hero-info">
+                <h2 class="profile-hero-name" id="profileHeroName">{{ user.name }}</h2>
+                <span class="badge badge-{{ active_role }}">{{ active_role|title }}</span>
+                <p class="text-muted text-sm mt-2">{{ user.email }}</p>
+                <p class="text-xs text-muted">Member since {{ user.created_at.strftime('%B %Y') }}</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="profile-grid">
+
+        <!-- ── Left: editable info ──────────────────────────────────────── -->
+        <div>
+
+            <!-- Personal Information -->
+            <div class="card mb-5">
+                <div class="card-header">
+                    <span class="card-title">👤 Personal Information</span>
+                    <span class="badge badge-info text-xs">Same as registration</span>
+                </div>
+                <div class="card-body">
+                    <form id="profileForm">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="form-label" for="prof_name">Full Name <sup>*</sup></label>
+                                <input type="text" id="prof_name" name="name" class="form-control"
+                                    value="{{ user.name }}" required placeholder="Your full name">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="prof_phone">Phone</label>
+                                <input type="tel" id="prof_phone" name="phone" class="form-control"
+                                    value="{{ user.phone or '' }}" placeholder="98xxxxxxxx">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="prof_email">Email Address</label>
+                            <input type="email" id="prof_email" class="form-control profile-email-readonly"
+                                value="{{ user.email }}" disabled title="Email cannot be changed">
+                            <small class="text-muted text-xs">Email address cannot be changed</small>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="prof_address">Address</label>
+                            <textarea id="prof_address" name="address" class="form-control" rows="2"
+                                placeholder="Your address">{{ user.address or '' }}</textarea>
+                        </div>
+
+                        {% if active_role == 'chemist' and chemist %}
+                        <!-- Chemist-only pharmacy fields -->
+                        <div class="auth-divider">🏥 Pharmacy Details</div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="form-label" for="prof_shop">Shop Name <sup>*</sup></label>
+                                <input type="text" id="prof_shop" name="shop_name" class="form-control"
+                                    value="{{ chemist.shop_name }}" required placeholder="MedPlus Pharmacy">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="prof_license">License Number</label>
+                                <input type="text" id="prof_license" name="license_no" class="form-control"
+                                    value="{{ chemist.license_no or '' }}" placeholder="PH/2024/XXXXX">
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="form-label" for="prof_lat">Latitude</label>
+                                <input type="number" id="prof_lat" name="latitude" class="form-control" step="any"
+                                    value="{{ chemist.latitude or '' }}" placeholder="20.5937">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="prof_lng">Longitude</label>
+                                <input type="number" id="prof_lng" name="longitude" class="form-control" step="any"
+                                    value="{{ chemist.longitude or '' }}" placeholder="78.9629">
+                            </div>
+                        </div>
+                        <button type="button" onclick="getLocation()" class="btn btn-outline btn-sm mb-4">
+                            📍 Use My Current Location
+                        </button>
+                        {% endif %}
+
+                        <button type="submit" id="saveProfileBtn" class="btn btn-primary w-100 btn-lg">
+                            💾 Save Changes
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Change Password -->
+            <div class="card">
+                <div class="card-header">
+                    <span class="card-title">🔒 Change Password</span>
+                </div>
+                <div class="card-body">
+                    <form id="pwForm">
+                        <div class="form-group">
+                            <label class="form-label" for="prof_cur_pw">Current Password <sup>*</sup></label>
+                            <div class="pw-input-wrap">
+                                <input type="password" id="prof_cur_pw" name="current_password" class="form-control"
+                                    placeholder="Enter current password" autocomplete="current-password">
+                                <button type="button" class="pw-toggle-btn" onclick="togglePw('prof_cur_pw', this)"
+                                    title="Show/hide password">👁️</button>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="form-label" for="prof_new_pw">New Password <sup>*</sup></label>
+                                <div class="pw-input-wrap">
+                                    <input type="password" id="prof_new_pw" name="new_password" class="form-control"
+                                        placeholder="Min 6 characters" minlength="6" autocomplete="new-password">
+                                    <button type="button" class="pw-toggle-btn" onclick="togglePw('prof_new_pw', this)"
+                                        title="Show/hide password">👁️</button>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="prof_confirm_pw">Confirm New Password
+                                    <sup>*</sup></label>
+                                <div class="pw-input-wrap">
+                                    <input type="password" id="prof_confirm_pw" class="form-control"
+                                        placeholder="Repeat new password" minlength="6" autocomplete="new-password">
+                                    <button type="button" class="pw-toggle-btn"
+                                        onclick="togglePw('prof_confirm_pw', this)"
+                                        title="Show/hide password">👁️</button>
+                                </div>
+                            </div>
+                        </div>
+                        <div id="pwStrengthBar" class="pw-strength-wrap d-none">
+                            <div class="pw-strength-track">
+                                <div class="pw-strength-fill" id="pwStrengthFill"></div>
+                            </div>
+                            <span class="pw-strength-label" id="pwStrengthLabel"></span>
+                        </div>
+                        <button type="submit" id="savePwBtn" class="btn btn-warning w-100 btn-lg mt-3">
+                            🔑 Update Password
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- ── Right: info summary sidebar ─────────────────────────────── -->
+        <div>
+            <!-- Account summary -->
+            <div class="card mb-5">
+                <div class="card-header">
+                    <span class="card-title">📋 Account Summary</span>
+                </div>
+                <div class="card-body">
+                    <div class="profile-info-list">
+                        <div class="profile-info-row">
+                            <span class="profile-info-label">Role</span>
+                            <span class="badge badge-{{ active_role }}">{{ active_role|title }}</span>
+                        </div>
+                        <div class="profile-info-row">
+                            <span class="profile-info-label">Email</span>
+                            <span class="profile-info-value text-sm">{{ user.email }}</span>
+                        </div>
+                        <div class="profile-info-row">
+                            <span class="profile-info-label">Phone</span>
+                            <span class="profile-info-value text-sm" id="summaryPhone">
+                                {{ user.phone or '—' }}
+                            </span>
+                        </div>
+                        <div class="profile-info-row">
+                            <span class="profile-info-label">Address</span>
+                            <span class="profile-info-value text-sm" id="summaryAddress">
+                                {{ (user.address[:40] + '…') if user.address and user.address|length > 40 else
+                                (user.address or '—') }}
+                            </span>
+                        </div>
+                        {% if active_role == 'chemist' and chemist %}
+                        <div class="profile-info-row">
+                            <span class="profile-info-label">Shop</span>
+                            <span class="profile-info-value text-sm" id="summaryShop">
+                                {{ chemist.shop_name }}
+                            </span>
+                        </div>
+                        <div class="profile-info-row">
+                            <span class="profile-info-label">License</span>
+                            <span class="profile-info-value text-sm">
+                                {{ chemist.license_no or '—' }}
+                            </span>
+                        </div>
+                        <div class="profile-info-row">
+                            <span class="profile-info-label">Location</span>
+                            <span class="profile-info-value text-sm">
+                                {% if chemist.latitude and chemist.longitude %}
+                                {{ "%.4f"|format(chemist.latitude) }}, {{ "%.4f"|format(chemist.longitude) }}
+                                {% else %}—{% endif %}
+                            </span>
+                        </div>
+                        {% endif %}
+                        <div class="profile-info-row">
+                            <span class="profile-info-label">Member since</span>
+                            <span class="profile-info-value text-sm">
+                                {{ user.created_at.strftime('%d %b %Y') }}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tips card -->
+            <div class="card profile-tips-card">
+                <div class="card-body">
+                    <h4 class="profile-tips-title">💡 Tips</h4>
+                    <ul class="profile-tips-list">
+                        <li>Keep your phone number up to date for order notifications.</li>
+                        <li>Add your address to speed up deliveries.</li>
+                        <li>Use a strong password — at least 8 characters with numbers.</li>
+                    </ul>
+                    {% if active_role == 'chemist' %}
+                    <ul class="profile-tips-list mt-3">
+                        <li>Update your location (lat/lng) so patients can find your pharmacy on the map.</li>
+                        <li>Your license number is shown to patients for trust verification.</li>
+                    </ul>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Role flag — read from data attribute so no Jinja mixes into JS
+    const IS_CHEMIST = document.getElementById('profileMeta').dataset.role === 'chemist';
+
+    // ── Password show/hide toggle ───────────────────────────────────────────
+    function togglePw(id, btn) {
+        const inp = document.getElementById(id);
+        inp.type = inp.type === 'password' ? 'text' : 'password';
+        btn.textContent = inp.type === 'password' ? '👁️' : '🙈';
+    }
+
+    // ── Password strength meter ─────────────────────────────────────────────
+    document.getElementById('prof_new_pw').addEventListener('input', function () {
+        const val = this.value;
+        const bar = document.getElementById('pwStrengthBar');
+        const fill = document.getElementById('pwStrengthFill');
+        const lbl = document.getElementById('pwStrengthLabel');
+        if (!val) { bar.classList.add('d-none'); return; }
+        bar.classList.remove('d-none');
+        let score = 0;
+        if (val.length >= 6) score++;
+        if (val.length >= 10) score++;
+        if (/[A-Z]/.test(val)) score++;
+        if (/[0-9]/.test(val)) score++;
+        if (/[^A-Za-z0-9]/.test(val)) score++;
+        const levels = [
+            { label: 'Very Weak', color: '#ef4444', w: '20%' },
+            { label: 'Weak', color: '#f97316', w: '40%' },
+            { label: 'Fair', color: '#eab308', w: '60%' },
+            { label: 'Strong', color: '#22c55e', w: '80%' },
+            { label: 'Very Strong', color: '#10b981', w: '100%' },
+        ];
+        const lvl = levels[Math.min(score, 4)];
+        fill.style.width = lvl.w;
+        fill.style.background = lvl.color;
+        lbl.textContent = lvl.label;
+        lbl.style.color = lvl.color;
+    });
+
+    // ── Live avatar initial update ──────────────────────────────────────────
+    document.getElementById('prof_name').addEventListener('input', function () {
+        const first = (this.value.trim()[0] || '?').toUpperCase();
+        document.getElementById('profileAvatarPreview').textContent = first;
+        document.getElementById('profileHeroName').textContent = this.value.trim() || 'Your Name';
+    });
+
+    // ── Geolocation for chemist ─────────────────────────────────────────────
+    function getLocation() {
+        if (!navigator.geolocation) { Toast.error('Geolocation not supported'); return; }
+        navigator.geolocation.getCurrentPosition(pos => {
+            document.getElementById('prof_lat').value = pos.coords.latitude.toFixed(6);
+            document.getElementById('prof_lng').value = pos.coords.longitude.toFixed(6);
+            Toast.success('📍 Location captured!');
+        }, () => Toast.error('Could not get location'));
+    }
+
+    // ── Save profile info ───────────────────────────────────────────────────
+    document.getElementById('profileForm').addEventListener('submit', async e => {
+        e.preventDefault();
+        const btn = document.getElementById('saveProfileBtn');
+        const orig = btn.innerHTML;
+        btn.innerHTML = '<span class="spinner"></span> Saving…';
+        btn.disabled = true;
+
+        const payload = {
+            name: document.getElementById('prof_name').value.trim(),
+            phone: document.getElementById('prof_phone').value.trim(),
+            address: document.getElementById('prof_address').value.trim(),
+        };
+        if (IS_CHEMIST) {
+            payload.shop_name = document.getElementById('prof_shop').value.trim();
+            payload.license_no = document.getElementById('prof_license').value.trim();
+            payload.latitude = document.getElementById('prof_lat').value || null;
+            payload.longitude = document.getElementById('prof_lng').value || null;
+        }
+
+        try {
+            const res = await fetch('{{ url_for("profile_settings") }}', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            const data = await res.json();
+            if (data.success) {
+                Toast.success(data.message);
+                // Update summary sidebar
+                document.getElementById('summaryPhone').textContent =
+                    payload.phone || '—';
+                document.getElementById('summaryAddress').textContent =
+                    (payload.address.length > 40 ? payload.address.slice(0, 40) + '…' : payload.address) || '—';
+                if (IS_CHEMIST && document.getElementById('summaryShop')) {
+                    document.getElementById('summaryShop').textContent = payload.shop_name || '—';
+                }
+            } else {
+                Toast.error(data.message);
+            }
+        } catch {
+            Toast.error('Network error. Please try again.');
+        } finally {
+            btn.innerHTML = orig;
+            btn.disabled = false;
+        }
+    });
+
+    // ── Change password ─────────────────────────────────────────────────────
+    document.getElementById('pwForm').addEventListener('submit', async e => {
+        e.preventDefault();
+        const newPw = document.getElementById('prof_new_pw').value;
+        const confirmPw = document.getElementById('prof_confirm_pw').value;
+        if (newPw !== confirmPw) {
+            Toast.error('New passwords do not match!');
+            return;
+        }
+        const btn = document.getElementById('savePwBtn');
+        const orig = btn.innerHTML;
+        btn.innerHTML = '<span class="spinner"></span> Updating…';
+        btn.disabled = true;
+
+        try {
+            const res = await fetch('{{ url_for("profile_settings") }}', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    name: document.getElementById('prof_name').value.trim(),
+                    current_password: document.getElementById('prof_cur_pw').value,
+                    new_password: newPw,
+                })
+            });
+            const data = await res.json();
+            if (data.success) {
+                Toast.success('Password updated! 🔐');
+                document.getElementById('pwForm').reset();
+                document.getElementById('pwStrengthBar').classList.add('d-none');
+            } else {
+                Toast.error(data.message);
+            }
+        } catch {
+            Toast.error('Network error. Please try again.');
+        } finally {
+            btn.innerHTML = orig;
+            btn.disabled = false;
+        }
+    });
+</script>
+{% endblock %}

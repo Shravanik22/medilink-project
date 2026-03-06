@@ -25,19 +25,17 @@
     </div>
 
     <div class="auth-right">
-        <div class="auth-form-box animate-slide-up" style="max-width:420px">
+        <div class="auth-form-box auth-form-box-reg animate-slide-up">
             <h2>Create Account</h2>
             <p class="subtitle">Fill in your details to get started</p>
 
             <!-- Role Selector -->
-            <div style="display:flex;gap:10px;margin-bottom:20px">
-                <label class="role-tab active" id="tab-patient"
-                    style="flex:1;padding:10px;border:2px solid var(--primary);border-radius:var(--radius);text-align:center;cursor:pointer;transition:all .2s;font-weight:600;font-size:14px;background:var(--primary-light);color:var(--primary)">
-                    <input type="radio" name="role_sel" value="patient" checked style="display:none"> 👤 Patient
+            <div class="role-selector">
+                <label class="role-tab active" id="tab-patient">
+                    <input type="radio" name="role_sel" value="patient" checked> 👤 Patient
                 </label>
-                <label class="role-tab" id="tab-chemist"
-                    style="flex:1;padding:10px;border:2px solid var(--border);border-radius:var(--radius);text-align:center;cursor:pointer;transition:all .2s;font-weight:600;font-size:14px;color:var(--text-muted)">
-                    <input type="radio" name="role_sel" value="chemist" style="display:none"> 💊 Chemist
+                <label class="role-tab" id="tab-chemist">
+                    <input type="radio" name="role_sel" value="chemist"> 💊 Chemist
                 </label>
             </div>
 
@@ -64,7 +62,7 @@
                 </div>
 
                 <!-- Chemist-only fields -->
-                <div id="chemistFields" style="display:none">
+                <div id="chemistFields" class="chemist-fields-hidden">
                     <div class="auth-divider">Pharmacy Details</div>
                     <div class="form-group">
                         <label class="form-label">Shop Name <sup>*</sup></label>
@@ -117,14 +115,8 @@
         tab.addEventListener('click', () => {
             const val = tab.querySelector('input').value;
             document.getElementById('roleInput').value = val;
-            document.querySelectorAll('.role-tab').forEach(t => {
-                t.style.border = '2px solid var(--border)';
-                t.style.background = 'transparent';
-                t.style.color = 'var(--text-muted)';
-            });
-            tab.style.border = '2px solid var(--primary)';
-            tab.style.background = 'var(--primary-light)';
-            tab.style.color = 'var(--primary)';
+            document.querySelectorAll('.role-tab').forEach(t => t.classList.remove('active'));
+            tab.classList.add('active');
             document.getElementById('chemistFields').style.display =
                 val === 'chemist' ? 'block' : 'none';
             document.getElementById('shopName').required = val === 'chemist';

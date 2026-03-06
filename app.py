@@ -893,6 +893,81 @@ def update_order_status():
         conn.close()
 
 
+# ─── PROFILE SETTINGS (shared by patient + chemist) ─────────────────────────
+@app.route('/profile', methods=['GET', 'POST'])
+@login_required
+@role_required('patient', 'chemist')
+def profile_settings():
+    uid  = session['user_id']
+    role = session['role']
+    conn = get_db()
+    try:
+        if request.method == 'POST':
+            data        = request.get_json() or {}
+            name        = data.get('name', '').strip()
+            phone       = data.get('phone', '').strip()
+            address     = data.get('address', '').strip()
+            new_pw      = data.get('new_password', '').strip()
+            current_pw  = data.get('current_password', '').strip()
+
+            if not name:
+                return jsonify({'success': False, 'message': 'Name is required'}), 400
+
+            with conn.cursor() as c:
+                # Verify current password if user wants to change it
+                if new_pw:
+                    if len(new_pw) < 6:
+                        return jsonify({'success': False,
+                                        'message': 'New password must be at least 6 characters'}), 400
+                    c.execute("SELECT password FROM users WHERE id=%s", (uid,))
+                    row = c.fetchone()
+                    if not row or not check_password_hash(row['password'], current_pw):
+                        return jsonify({'success': False,
+                                        'message': 'Current password is incorrect'}), 400
+                    c.execute(
+                        "UPDATE users SET name=%s, phone=%s, address=%s, password=%s WHERE id=%s",
+                        (name, phone, address, generate_password_hash(new_pw), uid)
+                    )
+                else:
+                    c.execute(
+                        "UPDATE users SET name=%s, phone=%s, address=%s WHERE id=%s",
+                        (name, phone, address, uid)
+                    )
+
+                # Also update chemist table if role is chemist
+                if role == 'chemist':
+                    shop_name  = data.get('shop_name', '').strip()
+                    license_no = data.get('license_no', '').strip()
+                    lat        = data.get('latitude') or None
+                    lng        = data.get('longitude') or None
+                    if not shop_name:
+                        return jsonify({'success': False,
+                                        'message': 'Shop name is required'}), 400
+                    c.execute("""UPDATE chemists
+                        SET shop_name=%s, license_no=%s, address=%s, phone=%s,
+                            latitude=%s, longitude=%s
+                        WHERE user_id=%s""",
+                        (shop_name, license_no, address, phone, lat, lng, uid))
+
+            conn.commit()
+            # Update session name in case it changed
+            session['user_name'] = name
+            return jsonify({'success': True, 'message': 'Profile updated successfully! ✅'})
+
+        # GET — load profile data
+        with conn.cursor() as c:
+            c.execute("SELECT * FROM users WHERE id=%s", (uid,))
+            user = c.fetchone()
+            chemist = None
+            if role == 'chemist':
+                c.execute("SELECT * FROM chemists WHERE user_id=%s", (uid,))
+                chemist = c.fetchone()
+    finally:
+        conn.close()
+
+    return render_template('profile_settings.html', user=user, chemist=chemist)
+
+
 # ─── ADMIN ROUTES ─────────────────────────────────────────────────────────────
 @app.route('/admin/dashboard')
 @login_required

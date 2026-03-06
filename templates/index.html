@@ -5,7 +5,7 @@
     <!-- Nav -->
     <nav class="landing-nav">
         <a href="{{ url_for('index') }}" class="nav-brand">
-            <div class="brand-icon" style="width:36px;height:36px;font-size:18px">💊</div>
+            <div class="brand-icon brand-icon-sm">💊</div>
             <span>MediLink</span>
         </a>
         <div class="nav-links">
@@ -30,8 +30,7 @@
                 <a href="{{ url_for('register') }}" class="btn btn-accent btn-lg">
                     🚀 Start Free
                 </a>
-                <a href="{{ url_for('login') }}" class="btn btn-lg"
-                    style="background:rgba(255,255,255,.12);color:#fff;border:1px solid rgba(255,255,255,.25)">
+                <a href="{{ url_for('login') }}" class="btn btn-lg hero-glass-btn">
                     🔑 Login
                 </a>
             </div>
@@ -95,8 +94,7 @@
                 <h3>For Patients</h3>
                 <p>Upload prescriptions and medical reports, track health metrics, order medicines, and find nearby
                     pharmacies.</p>
-                <a href="{{ url_for('register') }}?role=patient" class="btn btn-outline"
-                    style="color:#fff;border-color:rgba(255,255,255,.3)">
+                <a href="{{ url_for('register') }}?role=patient" class="btn btn-outline role-btn-outline">
                     Join as Patient →
                 </a>
             </div>
@@ -104,8 +102,7 @@
                 <span class="role-emoji">💊</span>
                 <h3>For Chemists</h3>
                 <p>Manage inventory, process orders, handle emergency requests, and track your pharmacy performance.</p>
-                <a href="{{ url_for('register') }}?role=chemist" class="btn btn-outline"
-                    style="color:#fff;border-color:rgba(255,255,255,.3)">
+                <a href="{{ url_for('register') }}?role=chemist" class="btn btn-outline role-btn-outline">
                     Register Pharmacy →
                 </a>
             </div>
@@ -113,8 +110,7 @@
                 <span class="role-emoji">🛠️</span>
                 <h3>For Admins</h3>
                 <p>Monitor the entire ecosystem, manage users, track orders, and ensure platform integrity.</p>
-                <a href="{{ url_for('login') }}" class="btn btn-outline"
-                    style="color:#fff;border-color:rgba(255,255,255,.3)">
+                <a href="{{ url_for('login') }}" class="btn btn-outline role-btn-outline">
                     Admin Login →
                 </a>
             </div>

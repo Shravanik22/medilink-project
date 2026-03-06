@@ -15,14 +15,14 @@
                 <div class="form-group">
                     <label class="form-label">Prescription File <sup>*</sup></label>
                     <div class="drop-zone" id="dropZone">
-                        <input type="file" name="file" id="prescFile" accept=".pdf,.jpg,.jpeg,.png" style="display:none"
-                            required>
+                        <input type="file" name="file" id="prescFile" accept=".pdf,.jpg,.jpeg,.png" class="d-none"
+                            title="Upload prescription file" required>
                         <div class="dz-icon">📋</div>
                         <div class="dz-text">
                             <strong>Click or drag</strong> to upload prescription<br>
                             <small>PDF, JPG, PNG up to 16MB</small>
                         </div>
-                        <div class="dz-selected" style="margin-top:10px;font-weight:600;color:var(--primary)"></div>
+                        <div class="dz-selected dz-selected-filename"></div>
                     </div>
                 </div>
                 <div class="form-group">
@@ -43,9 +43,9 @@
             <span class="card-title">📁 My Prescriptions</span>
             <span class="badge badge-info">{{ prescriptions|length }}</span>
         </div>
-        <div class="card-body" style="padding:0">
+        <div class="card-body card-body-p0">
             {% if prescriptions %}
-            <div class="table-wrapper" style="border:none;border-radius:0">
+            <div class="table-wrapper table-borderless">
                 <table>
                     <thead>
                         <tr>
@@ -58,7 +58,7 @@
                         {% for p in prescriptions %}
                         <tr>
                             <td>
-                                <div style="font-weight:600;font-size:13px">{{ p.file_name }}</div>
+                                <div class="presc-filename">{{ p.file_name }}</div>
                                 {% if p.notes %}
                                 <div class="text-xs text-muted">{{ p.notes[:60] }}{% if p.notes|length > 60 %}…{% endif
                                     %}</div>
