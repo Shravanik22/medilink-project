@@ -4,8 +4,7 @@
 {% block page_subtitle %}Browse registered pharmacies near you{% endblock %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-    integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
 {% endblock %}
 
 {% block content %}
@@ -63,8 +62,7 @@
 {% block extra_js %}
 {# Embed chemist data as JSON for the map — avoids Jinja syntax inside JS #}
 <script id="chemists-data" type="application/json">{{ chemists_json | safe }}</script>
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
-    integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV/XN/WLs=" crossorigin=""></script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
 <script>
     // ── Initialise Leaflet map centred on Maharashtra, India ──
     var map = L.map('map').setView([19.7515, 75.7139], 7);
