@@ -82,8 +82,16 @@
                 class="btn btn-primary btn-sm btn-full" {{ 'disabled' if med.stock==0 }}>
                 🛒 Add to Cart
             </button>
-            <button data-med-id="{{ med.id }}" onclick="showMedDetail(this.dataset.medId)"
-                class="btn btn-outline btn-sm btn-icon">👁</button>
+            <button data-med-name="{{ med.name|e }}"
+                data-med-generic="{{ med.generic_name|e if med.generic_name else '' }}"
+                data-med-category="{{ med.category|e if med.category else '' }}"
+                data-med-description="{{ med.description|e if med.description else '' }}"
+                data-med-expiry="{{ med.expiry_date.strftime('%B %Y') if med.expiry_date else 'N/A' }}"
+                data-med-price="{{ '%.2f'|format(med.price) }}" data-med-stock="{{ med.stock }}"
+                data-med-unit="{{ med.unit|e if med.unit else '' }}"
+                data-med-shop="{{ med.shop_name|e if med.shop_name else '' }}"
+                data-med-address="{{ med.chemist_address|e if med.chemist_address else '' }}"
+                onclick="showMedDetail(this)" class="btn btn-outline btn-sm btn-icon">👁</button>
         </div>
     </div>
     {% endfor %}
@@ -140,6 +148,42 @@
         <div class="modal-footer">
             <button class="btn btn-outline" onclick="Modal.close('cartModal')">Cancel</button>
             <button class="btn btn-accent" onclick="placeOrder()" id="placeBtn">✅ Place Order</button>
+        </div>
+    </div>
+</div>
+
+<!-- Medicine Details Modal -->
+<div class="modal-overlay" id="medDetailModal">
+    <div class="modal">
+        <div class="modal-header">
+            <h3>💊 Medicine Details</h3>
+            <button class="modal-close" onclick="Modal.close('medDetailModal')">×</button>
+        </div>
+        <div class="modal-body">
+            <h4 id="detailName" style="color:var(--primary); font-size:1.5rem; margin-bottom:0.5rem"></h4>
+            <p id="detailGeneric" class="text-muted mb-3" style="font-style: italic;"></p>
+            <div class="mb-3">
+                <span id="detailCategory" class="badge badge-info badge-small"></span>
+            </div>
+
+            <div style="background:var(--bg-main); padding: 1rem; border-radius: 8px; margin-bottom: 1rem;">
+                <p style="margin-bottom: 0.5rem;"><strong>Description:</strong> <span id="detailDescription"></span></p>
+                <div style="display: flex; gap: 2rem; margin-top: 1rem;">
+                    <div><strong>Price:</strong> ₹<span id="detailPrice"></span> <span id="detailUnit"
+                            class="text-sm text-muted"></span></div>
+                    <div><strong>Stock:</strong> <span id="detailStock"></span></div>
+                </div>
+            </div>
+
+            <div
+                style="display: flex; flex-direction: column; gap: 0.5rem; background:var(--bg-card); padding: 1rem; border-radius: 8px; border: 1px solid var(--border);">
+                <div><strong>📅 Expiry Date:</strong> <span id="detailExpiry"></span></div>
+                <div><strong>🏪 Pharmacy:</strong> <span id="detailShop"></span></div>
+                <div class="text-sm text-muted"><strong>📍 Address:</strong> <span id="detailAddress"></span></div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-outline" onclick="Modal.close('medDetailModal')">Close</button>
         </div>
     </div>
 </div>
@@ -240,7 +284,25 @@
         }
     }
 
-    function showMedDetail(id) { Toast.info('View medicine #' + id); }
+    function showMedDetail(btn) {
+        document.getElementById('detailName').textContent = btn.dataset.medName || 'N/A';
+        document.getElementById('detailGeneric').textContent = btn.dataset.medGeneric || '';
+        document.getElementById('detailCategory').textContent = btn.dataset.medCategory || 'General';
+        document.getElementById('detailDescription').textContent = btn.dataset.medDescription || 'No description available.';
+        document.getElementById('detailExpiry').textContent = btn.dataset.medExpiry || 'N/A';
+        document.getElementById('detailPrice').textContent = btn.dataset.medPrice || '0.00';
+        document.getElementById('detailUnit').textContent = 'per ' + (btn.dataset.medUnit || 'unit');
+        document.getElementById('detailStock').textContent = btn.dataset.medStock || '0';
+        document.getElementById('detailShop').textContent = btn.dataset.medShop || 'N/A';
+        document.getElementById('detailAddress').textContent = btn.dataset.medAddress || 'N/A';
+
+        // Hide category badge if empty
+        const catBadge = document.getElementById('detailCategory');
+        if (!btn.dataset.medCategory) catBadge.style.display = 'none';
+        else catBadge.style.display = 'inline-block';
+
+        Modal.open('medDetailModal');
+    }
 
     // Apply stock-bar fill colours from data-stock attribute
     document.querySelectorAll('.stock-bar-fill[data-stock]').forEach(el => {
