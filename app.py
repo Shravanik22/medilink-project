@@ -82,7 +82,7 @@ def _get_env_clean(key, default=''):
     val = os.environ.get(key, default)
     return str(val).strip().strip('"').strip("'")
 
-_db_host = _get_env_clean('DB_HOST', 'localhost')
+_db_host = _get_env_clean('DB_HOST', 'gateway01.ap-southeast-1.prod.aws.tidbcloud.com')
 _use_ssl = any(s in _db_host for s in (
     'aivencloud.com', 'tidbcloud.com', 'planetscale.com', 'neon.tech', 'db4free.net'))
 
@@ -93,12 +93,17 @@ def _make_ssl_ctx():
     ctx.verify_mode = ssl.CERT_NONE  # encrypt without CA verification
     return ctx
 
+_db_user = _get_env_clean('DB_USER', 'jrecBMtLWS1Phvm.root')
+# If Render has an old 'root' user saved in its dashboard, force the TiDB prefix:
+if 'tidbcloud' in _db_host and '.' not in _db_user:
+    _db_user = 'jrecBMtLWS1Phvm.' + _db_user
+
 DB_CONFIG = {
     'host':     _db_host,
-    'port':     int(_get_env_clean('DB_PORT', '3306') or '3306'),
-    'user':     _get_env_clean('DB_USER', 'root'),
-    'password': _get_env_clean('DB_PASSWORD', ''),
-    'database': _get_env_clean('DB_NAME', 'medilink'),
+    'port':     int(_get_env_clean('DB_PORT', '4000')),
+    'user':     _db_user,
+    'password': _get_env_clean('DB_PASSWORD', 'kq4g1Ev0dXCZbSBy'),
+    'database': _get_env_clean('DB_NAME', 'test'),
     'charset':  'utf8mb4',
     'cursorclass': pymysql.cursors.DictCursor,
     'connect_timeout': 10,
