@@ -11,13 +11,15 @@ services:
       - key: SECRET_KEY
         generateValue: true          # Render auto-generates a secure random value
       - key: DB_HOST
-        sync: false                  # Set manually in Render dashboard
+        value: "gateway01.ap-southeast-1.prod.aws.tidbcloud.com"
+      - key: DB_PORT
+        value: "4000"
       - key: DB_USER
-        sync: false                  # Set manually in Render dashboard
+        value: "jrecBMtLWS1Phvm.root"
       - key: DB_PASSWORD
-        sync: false                  # Set manually in Render dashboard
+        value: "kq4g1Ev0dXCZbSBy"
       - key: DB_NAME
-        value: medilink
+        value: "test"
       - key: FLASK_DEBUG
         value: "false"
       - key: PYTHON_VERSION

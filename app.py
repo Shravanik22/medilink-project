@@ -368,6 +368,10 @@ def parse_health_metrics(text):
 
 # ─── ROUTES ──────────────────────────────────────────────────────────────────
 
+@app.route('/health')
+def health():
+    return jsonify({"status": "healthy"}), 200
+
 @app.route('/')
 def index():
     if 'user_id' in session:
