@@ -1029,11 +1029,16 @@ def admin_users():
     conn = get_db()
     try:
         with conn.cursor() as c:
-            c.execute("SELECT * FROM users ORDER BY created_at DESC")
-            users = c.fetchall()
+            c.execute("SELECT * FROM users WHERE role='patient' ORDER BY created_at DESC")
+            patients = c.fetchall()
+            
+            c.execute("""SELECT u.*, ch.shop_name FROM users u
+                         LEFT JOIN chemists ch ON u.id = ch.user_id
+                         WHERE u.role='chemist' ORDER BY u.created_at DESC""")
+            chemists = c.fetchall()
     finally:
         conn.close()
-    return render_template('admin/users.html', users=users)
+    return render_template('admin/users.html', patients=patients, chemists=chemists)
 
 @app.route('/admin/users/toggle', methods=['POST'])
 @login_required

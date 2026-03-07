@@ -6,27 +6,26 @@
 {% block content %}
 <div class="card">
     <div class="card-header">
-        <span class="card-title">👥 All Users</span>
+        <span class="card-title">👤 Patients</span>
         <div class="user-search-row">
-            <input type="text" id="userSearch" class="form-control user-search" placeholder="🔍 Search users…">
-            <span class="badge badge-info">{{ users|length }} total</span>
+            <input type="text" id="patientSearch" class="form-control user-search" placeholder="🔍 Search patients…">
+            <span class="badge badge-info">{{ patients|length }} patients</span>
         </div>
     </div>
     <div class="card-body card-body-p0">
         <div class="table-wrapper table-borderless">
-            <table class="sortable" id="userTable">
+            <table class="sortable" id="patientTable">
                 <thead>
                     <tr>
                         <th data-col="0">Name</th>
                         <th data-col="1">Email</th>
-                        <th data-col="2">Role</th>
-                        <th data-col="3">Phone</th>
-                        <th data-col="4">Joined</th>
+                        <th data-col="2">Phone</th>
+                        <th data-col="3">Joined</th>
                         <th>Actions</th>
                     </tr>
                 </thead>
                 <tbody>
-                    {% for u in users %}
+                    {% for u in patients %}
                     <tr id="user-row-{{ u.id }}">
                         <td>
                             <div class="user-avatar-cell">
@@ -37,23 +36,61 @@
                             </div>
                         </td>
                         <td class="text-muted text-sm">{{ u.email }}</td>
-                        <td>
-                            <span
-                                class="badge {{ 'badge-info' if u.role=='patient' else ('badge-success' if u.role=='chemist' else 'badge-warning') }}">
-                                {% if u.role == 'patient' %}👤{% elif u.role == 'chemist' %}💊{% else %}🛠️{% endif %}
-                                {{ u.role|title }}
-                            </span>
-                        </td>
                         <td class="text-sm">{{ u.phone or '–' }}</td>
                         <td class="text-sm">{{ u.created_at.strftime('%d %b %Y') }}</td>
                         <td>
-                            {% if u.role != 'admin' %}
                             <button data-user-id="{{ u.id }}" data-user-name="{{ u.name|e }}"
                                 onclick="removeUser(this.dataset.userId, this.dataset.userName)"
                                 class="btn btn-danger btn-sm">🗑 Remove</button>
-                            {% else %}
-                            <span class="badge badge-warning">Protected</span>
-                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div class="card mt-5">
+    <div class="card-header">
+        <span class="card-title">💊 Chemists</span>
+        <div class="user-search-row">
+            <input type="text" id="chemistSearch" class="form-control user-search" placeholder="🔍 Search chemists…">
+            <span class="badge badge-success">{{ chemists|length }} chemists</span>
+        </div>
+    </div>
+    <div class="card-body card-body-p0">
+        <div class="table-wrapper table-borderless">
+            <table class="sortable" id="chemistTable">
+                <thead>
+                    <tr>
+                        <th data-col="0">User Name</th>
+                        <th data-col="1">Shop Name</th>
+                        <th data-col="2">Email</th>
+                        <th data-col="3">Phone</th>
+                        <th data-col="4">Joined</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for u in chemists %}
+                    <tr id="user-row-{{ u.id }}">
+                        <td>
+                            <div class="user-avatar-cell">
+                                <div class="user-avatar">
+                                    {{ u.name[0]|upper }}
+                                </div>
+                                <div class="font-bold">{{ u.name }}</div>
+                            </div>
+                        </td>
+                        <td class="font-bold text-success">{{ u.shop_name or '–' }}</td>
+                        <td class="text-muted text-sm">{{ u.email }}</td>
+                        <td class="text-sm">{{ u.phone or '–' }}</td>
+                        <td class="text-sm">{{ u.created_at.strftime('%d %b %Y') }}</td>
+                        <td>
+                            <button data-user-id="{{ u.id }}" data-user-name="{{ u.name|e }}"
+                                onclick="removeUser(this.dataset.userId, this.dataset.userName)"
+                                class="btn btn-danger btn-sm">🗑 Remove</button>
                         </td>
                     </tr>
                     {% endfor %}
@@ -77,6 +114,9 @@
             Toast.error(data.message);
         }
     }
-    document.addEventListener('DOMContentLoaded', () => initTableSearch('userSearch', 'userTable'));
+    document.addEventListener('DOMContentLoaded', () => {
+        initTableSearch('patientSearch', 'patientTable');
+        initTableSearch('chemistSearch', 'chemistTable');
+    });
 </script>
 {% endblock %}
