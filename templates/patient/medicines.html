@@ -40,12 +40,8 @@
     <div class="medicine-card">
         <div class="med-card-top">
             <div>
-                <div class="med-name">{{ med.name }}</div>
-                <div class="med-generic">{{ med.generic_name or '' }}</div>
+                <div class="med-name" style="font-size: 1.15rem; margin-bottom: 0.25rem;">{{ med.name }}</div>
             </div>
-            {% if med.category %}
-            <span class="badge badge-info badge-small">{{ med.category }}</span>
-            {% endif %}
         </div>
 
         <div class="med-price-row">
@@ -53,28 +49,15 @@
             <span class="med-unit-text">per {{ med.unit }}</span>
         </div>
 
-        <div class="med-stock">
-            📦 {{ med.stock }} in stock
+        <div class="med-stock mb-2 mt-1">
             <span
-                class="badge {{ 'badge-success' if med.stock > 5 else ('badge-warning' if med.stock > 0 else 'badge-danger') }} badge-margin-left">
+                class="badge {{ 'badge-success' if med.stock > 5 else ('badge-warning' if med.stock > 0 else 'badge-danger') }}">
                 {{ 'Available' if med.stock > 5 else ('Low Stock' if med.stock > 0 else 'Out of Stock') }}
             </span>
         </div>
-        <div class="stock-bar">
-            <div class="stock-bar-fill" data-stock="{{ med.stock }}"></div>
-        </div>
 
         <div class="mt-3 text-xs text-muted">🏪 {{ med.shop_name }}</div>
-        {% if med.chemist_address %}
-        <div class="text-xs text-muted">📍 {{ med.chemist_address[:60] }}</div>
-        {% endif %}
-        {% if med.expiry_date %}
-        <div class="med-expiry-wrap">
-            <span class="badge expiry-badge" data-expiry="{{ med.expiry_date }}">
-                📅 Exp: {{ med.expiry_date.strftime('%b %Y') }}
-            </span>
-        </div>
-        {% endif %}
+
 
         <div class="med-actions">
             <button data-med-id="{{ med.id }}" data-med-name="{{ med.name|e }}" data-med-price="{{ med.price }}"
