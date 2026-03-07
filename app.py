@@ -635,10 +635,13 @@ def search_medicines():
             medicines = c.fetchall()
             c.execute("SELECT DISTINCT category FROM medicines WHERE is_available=1 AND category IS NOT NULL")
             categories = [r['category'] for r in c.fetchall()]
+            
+            c.execute("SELECT id, file_name, uploaded_at FROM prescriptions WHERE patient_id=%s ORDER BY uploaded_at DESC", (session['user_id'],))
+            prescriptions = c.fetchall()
     finally:
         conn.close()
     return render_template('patient/medicines.html',
-        medicines=medicines, categories=categories, query=query, selected_cat=category)
+        medicines=medicines, categories=categories, query=query, selected_cat=category, prescriptions=prescriptions)
 
 # ─── PATIENT ORDERS (place + history) ──────────────────────────────────────
 @app.route('/patient/orders', methods=['GET', 'POST'])
