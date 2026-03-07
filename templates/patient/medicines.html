@@ -82,13 +82,7 @@
                 class="btn btn-primary btn-sm btn-full" {{ 'disabled' if med.stock==0 }}>
                 🛒 Add to Cart
             </button>
-            <button data-med-name="{{ med.name|e }}"
-                data-med-generic="{{ med.generic_name|e or 'N/A' }}"
-                data-med-category="{{ med.category|e or 'N/A' }}"
-                data-med-unit="{{ med.unit|e }}"
-                data-med-expiry="{{ med.expiry_date.strftime('%b %Y') if med.expiry_date else 'N/A' }}"
-                data-med-desc="{{ med.description|e or 'No description available.' }}"
-                onclick="showMedDetail(this)"
+            <button data-med-id="{{ med.id }}" onclick="showMedDetail(this.dataset.medId)"
                 class="btn btn-outline btn-sm btn-icon">👁</button>
         </div>
     </div>
@@ -146,27 +140,6 @@
         <div class="modal-footer">
             <button class="btn btn-outline" onclick="Modal.close('cartModal')">Cancel</button>
             <button class="btn btn-accent" onclick="placeOrder()" id="placeBtn">✅ Place Order</button>
-        </div>
-    </div>
-</div>
-
-<!-- Medicine Detail Modal -->
-<div class="modal-overlay" id="medDetailModal">
-    <div class="modal">
-        <div class="modal-header">
-            <h3 id="medDetailName">Medicine Details</h3>
-            <button class="modal-close" onclick="Modal.close('medDetailModal')">×</button>
-        </div>
-        <div class="modal-body">
-            <p><strong>Generic Name:</strong> <span id="medDetailGeneric"></span></p>
-            <p><strong>Category:</strong> <span id="medDetailCategory"></span></p>
-            <p><strong>Unit:</strong> <span id="medDetailUnit"></span></p>
-            <p><strong>Expiry Date:</strong> <span id="medDetailExpiry"></span></p>
-            <p class="mt-3"><strong>Description:</strong></p>
-            <div id="medDetailDesc" style="background:#f8f9fa; padding:10px; border-radius:4px; font-size:14px; white-space:pre-wrap; max-height:200px; overflow-y:auto; border:1px solid #ddd;"></div>
-        </div>
-        <div class="modal-footer">
-            <button class="btn btn-outline" onclick="Modal.close('medDetailModal')">Close</button>
         </div>
     </div>
 </div>
@@ -267,15 +240,7 @@
         }
     }
 
-    function showMedDetail(btn) {
-        document.getElementById('medDetailName').textContent = btn.dataset.medName;
-        document.getElementById('medDetailGeneric').textContent = btn.dataset.medGeneric;
-        document.getElementById('medDetailCategory').textContent = btn.dataset.medCategory;
-        document.getElementById('medDetailUnit').textContent = btn.dataset.medUnit;
-        document.getElementById('medDetailExpiry').textContent = btn.dataset.medExpiry;
-        document.getElementById('medDetailDesc').textContent = btn.dataset.medDesc;
-        Modal.open('medDetailModal');
-    }
+    function showMedDetail(id) { Toast.info('View medicine #' + id); }
 
     // Apply stock-bar fill colours from data-stock attribute
     document.querySelectorAll('.stock-bar-fill[data-stock]').forEach(el => {
