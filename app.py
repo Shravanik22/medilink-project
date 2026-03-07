@@ -82,34 +82,11 @@ def _get_env_clean(key, default=''):
     val = os.environ.get(key, default)
     return str(val).strip().strip('"').strip("'")
 
-import urllib.parse
-_db_url = _get_env_clean('DATABASE_URL') or _get_env_clean('MYSQL_URL')
-if _get_env_clean('DB_HOST').startswith('mysql'):
-    _db_url = _get_env_clean('DB_HOST')
+_db_host = _get_env_clean('DB_HOST', 'localhost')
+_use_ssl = any(s in _db_host for s in (
+    'aivencloud.com', 'tidbcloud.com', 'planetscale.com', 'neon.tech', 'db4free.net'))
 
-if _db_url:
-    _parsed = urllib.parse.urlparse(_db_url)
-    _db_host = _parsed.hostname or 'localhost'
-    _db_port = _parsed.port or 3306
-    _db_user = _parsed.username or 'root'
-    _db_password = _parsed.password or ''
-    _db_name = (_parsed.path or '/medilink').lstrip('/')
-else:
-    _db_host = _get_env_clean('DB_HOST', 'localhost')
-    _db_port = int(_get_env_clean('DB_PORT', '3306') or '3306')
-    _db_user = _get_env_clean('DB_USER', 'root')
-    _db_password = _get_env_clean('DB_PASSWORD', '')
-    _db_name = _get_env_clean('DB_NAME', 'medilink')
-
-_use_ssl = any(s in _db_host.lower() for s in (
-    'aivencloud.com', 'tidbcloud.com', 'planetscale.com', 'neon.tech', 
-    'db4free.net', 'render.com', 'clever-cloud.com', 'freemysqlhosting.net',
-    'sqlpub.com', 'rf.gd', 'amazonaws.com', 'azure.com', 'digitalocean.com'))
-
-if os.environ.get('DB_USE_SSL'):
-    _use_ssl = os.environ.get('DB_USE_SSL').lower() in ('true', '1', 'yes')
-
-# Build SSL context for cloud MySQL providers
+# Build SSL context for cloud MySQL providers (TiDB, Aiven, PlanetScale etc.)
 def _make_ssl_ctx():
     ctx = ssl.create_default_context()
     ctx.check_hostname = False
@@ -118,10 +95,10 @@ def _make_ssl_ctx():
 
 DB_CONFIG = {
     'host':     _db_host,
-    'port':     _db_port,
-    'user':     _db_user,
-    'password': _db_password,
-    'database': _db_name,
+    'port':     int(_get_env_clean('DB_PORT', '3306') or '3306'),
+    'user':     _get_env_clean('DB_USER', 'root'),
+    'password': _get_env_clean('DB_PASSWORD', ''),
+    'database': _get_env_clean('DB_NAME', 'medilink'),
     'charset':  'utf8mb4',
     'cursorclass': pymysql.cursors.DictCursor,
     'connect_timeout': 10,
