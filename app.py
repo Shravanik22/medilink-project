@@ -1029,9 +1029,24 @@ def toggle_user():
             c.execute("SELECT id FROM users WHERE id=%s AND role!='admin'", (uid,))
             if not c.fetchone():
                 return jsonify({'success': False, 'message': 'User not found'}), 404
+            
+            # Delete any orders associated with the user as patient
+            c.execute("DELETE FROM orders WHERE patient_id=%s", (uid,))
+            
+            # Delete any orders associated with the user as chemist (if applicable)
+            c.execute("SELECT id FROM chemists WHERE user_id=%s", (uid,))
+            chemist = c.fetchone()
+            if chemist:
+                c.execute("DELETE FROM orders WHERE chemist_id=%s", (chemist['id'],))
+                
             c.execute("DELETE FROM users WHERE id=%s AND role!='admin'", (uid,))
         conn.commit()
         return jsonify({'success': True, 'message': 'User removed'})
+    except Exception as e:
+        if conn:
+            conn.rollback()
+        app.logger.error('Error removing user: %s', e)
+        return jsonify({'success': False, 'message': 'Failed to remove user'}), 500
     finally:
         conn.close()
 
