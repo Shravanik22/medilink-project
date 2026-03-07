@@ -51,7 +51,6 @@
                         <tr>
                             <th>File</th>
                             <th>Date</th>
-                            <th>Status</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -65,11 +64,6 @@
                                 {% endif %}
                             </td>
                             <td class="text-sm">{{ p.uploaded_at.strftime('%d %b %Y') }}</td>
-                            <td>
-                                <span class="badge {{ 'badge-success' if p.is_verified else 'badge-warning' }}">
-                                    {{ '✓ Verified' if p.is_verified else '⏳ Pending' }}
-                                </span>
-                            </td>
                         </tr>
                         {% endfor %}
                     </tbody>

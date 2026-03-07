@@ -52,10 +52,11 @@
             </table>
         </div>
         {% else %}
-        <div class="empty-state">
+        <div class="empty-state empty-state-padded">
             <div class="empty-icon">🛒</div>
             <h3>No Orders Yet</h3>
             <p>You haven't placed any orders yet.</p>
+            <a href="{{ url_for('search_medicines') }}" class="btn btn-accent mt-3">Order Now</a>
         </div>
         {% endif %}
     </div>
