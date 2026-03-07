@@ -137,7 +137,7 @@
 {% endblock %}
 
 {% block extra_js %}
-<script id="orderStatsData" type="application/json">{{ order_stats }}</script>
+<script id="orderStatsData" type="application/json">{{ order_stats | safe }}</script>
 <script>
     // Simple pie chart using Canvas
     const stats = JSON.parse(document.getElementById('orderStatsData').textContent);
