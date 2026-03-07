@@ -83,6 +83,20 @@ def _get_env_clean(key, default=''):
     return str(val).strip().strip('"').strip("'")
 
 _db_host = _get_env_clean('DB_HOST', 'gateway01.ap-southeast-1.prod.aws.tidbcloud.com')
+_db_user = _get_env_clean('DB_USER', 'jrecBMtLWS1Phvm.root')
+_db_password = _get_env_clean('DB_PASSWORD', 'kq4g1Ev0dXCZbSBy')
+_db_port = int(_get_env_clean('DB_PORT', '4000'))
+_db_name = _get_env_clean('DB_NAME', 'test')
+
+# If running on Render, ignore stale environment variables from the dashboard
+# and force these known working TiDB connection credentials:
+if 'PORT' in os.environ:
+    _db_host = 'gateway01.ap-southeast-1.prod.aws.tidbcloud.com'
+    _db_user = 'jrecBMtLWS1Phvm.root'
+    _db_password = 'kq4g1Ev0dXCZbSBy'
+    _db_port = 4000
+    _db_name = 'test'
+
 _use_ssl = any(s in _db_host for s in (
     'aivencloud.com', 'tidbcloud.com', 'planetscale.com', 'neon.tech', 'db4free.net'))
 
@@ -93,17 +107,12 @@ def _make_ssl_ctx():
     ctx.verify_mode = ssl.CERT_NONE  # encrypt without CA verification
     return ctx
 
-_db_user = _get_env_clean('DB_USER', 'jrecBMtLWS1Phvm.root')
-# If Render has an old 'root' user saved in its dashboard, force the TiDB prefix:
-if 'tidbcloud' in _db_host and '.' not in _db_user:
-    _db_user = 'jrecBMtLWS1Phvm.' + _db_user
-
 DB_CONFIG = {
     'host':     _db_host,
-    'port':     int(_get_env_clean('DB_PORT', '4000')),
+    'port':     _db_port,
     'user':     _db_user,
-    'password': _get_env_clean('DB_PASSWORD', 'kq4g1Ev0dXCZbSBy'),
-    'database': _get_env_clean('DB_NAME', 'test'),
+    'password': _db_password,
+    'database': _db_name,
     'charset':  'utf8mb4',
     'cursorclass': pymysql.cursors.DictCursor,
     'connect_timeout': 10,
